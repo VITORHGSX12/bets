@@ -8,20 +8,25 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        pixel: ['"Press Start 2P"', 'monospace'],
+        vt: ['VT323', 'monospace'],
         fredoka: ['Fredoka', 'sans-serif'],
-        cartoon: ['"Luckiest Guy"', 'cursive', 'sans-serif'],
+      },
+      colors: {
+        flappySky: '#4ec0ca',
+        flappyGround: '#ded895',
+        flappyPipe: '#73bf2e',
+        flappyPipeDark: '#558022',
+        flappyOrange: '#e86100',
+        flappyYellow: '#f4c330',
       },
       boxShadow: {
-        'pop-emerald': '0 6px 0 #059669',
-        'pop-emerald-active': '0 2px 0 #059669',
-        'pop-amber': '0 6px 0 #d97706',
-        'pop-amber-active': '0 2px 0 #d97706',
-        'pop-rose': '0 6px 0 #e11d48',
-        'pop-rose-active': '0 2px 0 #e11d48',
-        'pop-indigo': '0 6px 0 #4f46e5',
-        'pop-sky': '0 6px 0 #0284c7',
-        'cartoon': '0 8px 0 rgba(0, 0, 0, 0.15)',
-        'cartoon-lg': '0 12px 0 rgba(0, 0, 0, 0.12)',
+        'pixel': '0 4px 0 #000000',
+        'pixel-lg': '0 6px 0 #000000',
+        'pop-emerald': '0 5px 0 #15803d',
+        'pop-amber': '0 5px 0 #b45309',
+        'pop-rose': '0 5px 0 #be123c',
+        'pop-sky': '0 5px 0 #0369a1',
       }
     },
   },

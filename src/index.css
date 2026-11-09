@@ -4,35 +4,56 @@
 
 @layer base {
   body {
-    font-family: 'Fredoka', cursive, sans-serif;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Animações e Efeitos Cartoon */
-@keyframes floatWiggle {
-  0%, 100% { transform: translateY(0px) rotate(-1deg); }
-  50% { transform: translateY(-6px) rotate(1.5deg); }
+/* Animação do Pássaro Flappy Bird Flutuando */
+@keyframes flappyBob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
-@keyframes rainbowShine {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
+@keyframes wingFlap {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-38deg) translateY(-5px);
+  }
 }
 
-.animate-float-wiggle {
-  animation: floatWiggle 3s ease-in-out infinite;
+.animate-wing {
+  animation: wingFlap 0.16s ease-in-out infinite;
+  transform-origin: top right;
 }
 
-.animate-rainbow {
-  animation: rainbowShine 8s linear infinite;
+@keyframes tickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-/* Botão estilo 3D de joguinho infantil pop */
-.btn-pop {
-  transition: all 0.1s ease;
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: tickerScroll 24s linear infinite;
 }
-.btn-pop:active {
-  transform: translateY(4px);
+
+.animate-flappy-bob {
+  animation: flappyBob 1.2s ease-in-out infinite;
+}
+
+.btn-pixel {
+  border-bottom: 4px solid #000000;
+  border-right: 2px solid #000000;
+  transition: all 0.08s ease;
+}
+.btn-pixel:active {
+  transform: translateY(3px);
+  border-bottom-width: 1px;
 }
