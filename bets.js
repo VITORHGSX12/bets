@@ -306,7 +306,7 @@ const generateRoundHash = () => {
 // Frases de Incentivo Rotativas
 const INCENTIVE_PHRASES = [
   '🔥 O Flappy Bird tá pagando alto agora! Aproveite a maré de sorte!',
-  '💰 Deposite R$ 20 e libere +R$ 120 de BÔNUS instantâneo!',
+  '💰 Deposite a partir de R$ 5 e libere +R$ 10 de BÔNUS instantâneo!',
   '🚀 Mais de R$ 14.850,00 pagos aos jogadores hoje!',
   '⚡ Dê Cash Out na hora certa e multiplique seu Pix!',
   '🎁 Convide seus amigos e ganhe R$ 20 de bônus por cada um!',
@@ -469,7 +469,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([
     { user: 'Lucas_SP', msg: 'Flappy Bird tá pagando muito hoje! 🚀', time: '22:50' },
     { user: 'FelipeM', msg: 'Resgatei R$ 185 no 1.85x! 💸', time: '22:52' },
-    { user: 'Gamer_99', msg: 'Depositei 20 e ganhei 120 de bônus kkk top!', time: '22:55' },
+    { user: 'Gamer_99', msg: 'Depositei 5 e ganhei 10 de bônus na hora! Top!', time: '22:55' },
   ]);
   const [newChatInput, setNewChatInput] = useState('');
 
@@ -1218,8 +1218,8 @@ export default function App() {
       setTotalDeposited(prev => prev + depositAmount);
       setHasDeposited(true);
 
-      // Bônus proporcional: >= 20 ganha +R$ 120, de 5 a 19 ganha +R$ 30
-      const bonusGiven = depositAmount >= 20 ? 120.00 : 30.00;
+      // Bônus de Depósito: R$ 10,00
+      const bonusGiven = 10.00;
       setBonusBalance(prev => prev + bonusGiven);
 
       audio.playCoin();
@@ -1302,7 +1302,7 @@ export default function App() {
             <span>•</span>
             <span className="flex items-center gap-1.5">
               <Coins className="w-4 h-4 text-yellow-600" />
-              Deposite R$ 20 e ganhe +R$ 120 de BÔNUS!
+              Deposite a partir de R$ 5 e ganhe +R$ 10 de BÔNUS!
             </span>
             <span>•</span>
             <span className="flex items-center gap-1.5 text-blue-900">
@@ -1354,7 +1354,7 @@ export default function App() {
             </div>
             <div className="bg-white border-2 border-black p-1.5 rounded-xl text-black shadow-pixel">
               <Coins className="w-4 h-4 mx-auto text-yellow-600" />
-              <span className="text-[9px] font-pixel block mt-0.5">+R$ 120</span>
+              <span className="text-[9px] font-pixel block mt-0.5">+R$ 10</span>
               <span className="text-[9px] font-black leading-none block">Bônus Especial</span>
             </div>
           </div>
@@ -2213,7 +2213,7 @@ export default function App() {
                   <span>{hasDeposited && totalDeposited >= 5 ? '✅ Desbloqueado' : '🔒 Bloqueado'}</span>
                 </div>
                 <p className="text-[11px] text-slate-700 mt-1">
-                  🎁 Deposite a partir de R$ 5 para desbloquear seus saques via Pix! Depósitos a partir de R$ 20 ganham <strong>+R$ 120,00 de BÔNUS</strong>!
+                  🎁 Deposite a partir de R$ 5 para desbloquear seus saques via Pix e ganhe <strong>+R$ 10,00 de BÔNUS</strong>!
                 </p>
               </div>
 
@@ -2330,7 +2330,7 @@ export default function App() {
               <div className="space-y-3">
                 <div className="bg-[#f4c330] p-2 rounded-xl border-2 border-black text-[11px] text-black font-black flex items-center gap-1.5">
                   <Gift className="w-4 h-4 shrink-0 text-yellow-900" />
-                  <span>Depósito Mínimo: <strong>R$ 5,00</strong>! Acima de R$ 20 ganhe <strong>+R$ 120 de BÔNUS</strong>!</span>
+                  <span>Depósito Mínimo: <strong>R$ 5,00</strong>! Ganhe <strong>+R$ 10 de BÔNUS</strong> automático!</span>
                 </div>
 
                 <div>
@@ -2466,7 +2466,7 @@ export default function App() {
                     +R$ {depositAmount.toFixed(2)} liberados no <strong>Saldo Real</strong>!
                   </p>
                   <p className="text-xs font-bold text-[#558022]">
-                    +R$ {depositAmount >= 20 ? '120.00' : '30.00'} adicionados no <strong>Saldo Bônus</strong>!
+                    +R$ 10.00 adicionados no <strong>Saldo Bônus</strong>!
                   </p>
                 </div>
               </div>
