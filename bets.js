@@ -2281,7 +2281,7 @@ export default function App() {
               <div className="flex items-center gap-1">
                 <input 
                   readOnly 
-                  value="https://bets-henna.vercel.app/?ref=99985280205"
+                  value="https://birdeasymoney.vercel.app/?ref=99985280205"
                   className="w-full bg-slate-100 px-2 py-1.5 rounded border border-black text-[10px] font-mono font-bold truncate"
                 />
                 <button 

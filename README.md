@@ -1,11 +1,11 @@
-# 🐤 RED BIRD GET MONEY - Jogo de Apostas Crash
+# 🐤 BIRD EASY MONEY - Jogo Oficial de Apostas Flappy Bird
 
-Plataforma completa de apostas no formato **Crash/Multiplayer Síncrono** com tema cartoon, física de voo inspirada em *Flappy Bird*, sistema de **dupla aposta independente (estilo Aviator/Spaceman)**, verificação criptográfica **Provably Fair**, carteira integrada com **Depósito e Saque Pix**, regras de bônus e **Chat Social ao Vivo**.
+Plataforma completa de apostas no formato **Crash/Multiplayer Síncrono** com tema retrô oficial do *Flappy Bird*, física de voo com asas animadas, sistema de **dupla aposta independente**, verificação criptográfica **Provably Fair**, carteira com **Depósito Pix com detecção automática (mín R$ 5) e Saque Pix (a partir de R$ 25)**, travas de validação antifraude (CPF e Celular real) e **Chat Social ao Vivo**.
 
 ---
 
 ## 🌐 Link Oficial em Produção 24/7 (Vercel Oficial)
-👉 **[https://bets-henna.vercel.app](https://bets-henna.vercel.app)**
+👉 **[https://birdeasymoney.vercel.app](https://birdeasymoney.vercel.app)**
 
 - **100% Online 24/7** em servidores globais da Vercel
 - **Zero telas de bloqueio**, zero senhas ou confirmações de IP
