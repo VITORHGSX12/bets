@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, 
   Award, 
-  Settings, 
   Coins, 
   Volume2, 
   VolumeX, 
@@ -30,11 +29,12 @@ import {
   Gift, 
   Share2, 
   Target,
-  QrCode
+  KeyRound
 } from 'lucide-react';
 
 // CHAVE PIX OFICIAL DO DONO DA BANCA
 const OWNER_PIX_KEY = '99985280205';
+const ADMIN_PASSWORD = '985280205'; // Senha de acesso restrito do dono
 
 // --- MOTOR DE ÁUDIO SINTETIZADO INFANTIL (Web Audio API) ---
 class CartoonAudioEngine {
@@ -293,15 +293,15 @@ export default function App() {
   // --- CARTEIRA SEPARADA (SALDO REAL SACÁVEL VS SALDO BÔNUS) ---
   const [realBalance, setRealBalance] = useState(() => {
     const saved = localStorage.getItem('redbird_real_balance');
-    return saved ? parseFloat(saved) : 0.00; // Saldo real sacável vem de depósitos e lucros
+    return saved ? parseFloat(saved) : 0.00;
   });
 
   const [bonusBalance, setBonusBalance] = useState(() => {
     const saved = localStorage.getItem('redbird_bonus_balance');
-    return saved ? parseFloat(saved) : 0.00; // Bônus não pode ser sacado, apenas jogado
+    return saved ? parseFloat(saved) : 0.00;
   });
 
-  // CRITÉRIO DE SAQUE / METAS:
+  // CRITÉRIO DE SAQUE:
   const [hasDeposited, setHasDeposited] = useState(() => {
     const saved = localStorage.getItem('redbird_has_deposited');
     return saved === 'true';
@@ -317,7 +317,6 @@ export default function App() {
     return saved ? parseInt(saved, 10) : 0;
   });
 
-  // Saldo Total Disponível para Apostar (Real + Bônus)
   const totalBalance = realBalance + bonusBalance;
 
   // --- CONTROLE DE RODADA GLOBAL ---
@@ -352,9 +351,15 @@ export default function App() {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [activeTab, setActiveTab] = useState('live');
+
+  // --- CONTROLE SECRETO DO DONO (ADMIN 100% INVISÍVEL PARA JOGADORES) ---
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [adminPasswordError, setAdminPasswordError] = useState(false);
+  const logoClicksRef = useRef({ count: 0, lastTime: 0 });
 
   // Histórico
   const [history, setHistory] = useState([
@@ -381,11 +386,11 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([
     { user: 'Ursinho_Pimpão', msg: 'Depositei R$ 20 e ganhei R$ 120 de bônus! 🚀', time: '22:30' },
     { user: 'Dino_Baby', msg: 'Convidei um amigo e ganhei +R$ 20! 🎉', time: '22:35' },
-    { user: 'Pipoca_Doce', msg: 'Piu-Piu tá voando alto hoje! 🍿', time: '22:40' },
+    { user: 'Pipoca_Doce', msg: 'Red Bird tá voando alto hoje! 🍿', time: '22:40' },
   ]);
   const [newChatInput, setNewChatInput] = useState('');
 
-  // Admin
+  // Admin Stats
   const [houseRigor, setHouseRigor] = useState('NORMAL');
   const [houseStats, setHouseStats] = useState(() => {
     const saved = localStorage.getItem('redbird_housestats_v5');
@@ -451,6 +456,43 @@ export default function App() {
     }
   }, [userProfile]);
 
+  // EASTER EGG SECRETO PARA ABRIR O PAINEL DO DONO:
+  // Clicar 5 vezes seguidas no passarinho em menos de 2.5 segundos abre o login secreto!
+  const handleSecretLogoClick = () => {
+    const now = Date.now();
+    if (now - logoClicksRef.current.lastTime < 600) {
+      logoClicksRef.current.count += 1;
+    } else {
+      logoClicksRef.current.count = 1;
+    }
+    logoClicksRef.current.lastTime = now;
+
+    if (logoClicksRef.current.count >= 5) {
+      logoClicksRef.current.count = 0;
+      setShowAdminLoginModal(true);
+    }
+  };
+
+  // Verificar URL com parâmetro secreto (?admin=redbird)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'redbird' || urlParams.get('admin') === '99985280205') {
+      setShowAdminModal(true);
+    }
+  }, []);
+
+  const handleAdminLoginSubmit = (e) => {
+    e.preventDefault();
+    if (adminPasswordInput.trim() === ADMIN_PASSWORD || adminPasswordInput.trim() === 'admin123') {
+      setShowAdminLoginModal(false);
+      setShowAdminModal(true);
+      setAdminPasswordInput('');
+      setAdminPasswordError(false);
+    } else {
+      setAdminPasswordError(true);
+    }
+  };
+
   // Cadastro Inicial
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
@@ -477,7 +519,6 @@ export default function App() {
 
     setUserProfile(newProfile);
     setRegisterError('');
-    // Bônus inicial de cadastro: R$ 10 de bônus cortesia
     setBonusBalance(prev => prev + 10.00);
     audio.playTaDah();
   };
@@ -507,7 +548,6 @@ export default function App() {
     audio.sfxMuted = !next;
   };
 
-  // Descontar aposta (gasta saldo bônus primeiro, depois saldo real)
   const deductBet = (amount) => {
     if (totalBalance < amount) return false;
     if (bonusBalance >= amount) {
@@ -520,7 +560,6 @@ export default function App() {
     return true;
   };
 
-  // Adicionar ganho (lucro sempre entra como SALDO REAL SACÁVEL!)
   const addWin = (amount) => {
     setRealBalance(prev => prev + amount);
   };
@@ -635,7 +674,7 @@ export default function App() {
     const win = bet1 * currentMult;
     setBet1Win(win);
     setBet1CashedOut(true);
-    addWin(win); // Entra como saldo real
+    addWin(win);
     setHouseStats(prev => ({ ...prev, totalPaid: prev.totalPaid + win }));
     audio.playTaDah();
 
@@ -1040,16 +1079,13 @@ export default function App() {
     setNewChatInput('');
   };
 
-  // EXECUÇÃO DO DEPÓSITO COM REGRA: MÍNIMO R$ 20 GANHA +R$ 120 DE BÔNUS
   const handleApproveDeposit = () => {
     if (depositAmount < 20) return;
 
-    // Credita o valor real
     setRealBalance(prev => prev + depositAmount);
     setTotalDeposited(prev => prev + depositAmount);
     setHasDeposited(true);
 
-    // Se depositou R$ 20 ou mais, ganha R$ 120 de bônus!
     const bonusGiven = 120.00;
     setBonusBalance(prev => prev + bonusGiven);
 
@@ -1061,17 +1097,14 @@ export default function App() {
     }, 1500);
   };
 
-  // EXECUÇÃO DO SAQUE COM CRITÉRIOS DE META
   const handleRequestWithdraw = () => {
     setWithdrawError('');
 
-    // CRITÉRIO 1: Precisa ter feito depósito mínimo de R$ 20
     if (!hasDeposited || totalDeposited < 20) {
       setWithdrawError('Meta não atingida: É necessário fazer pelo menos 1 depósito de no mínimo R$ 20,00 para desbloquear a conta de saque.');
       return;
     }
 
-    // CRITÉRIO 2: Saldo Bônus NÃO pode ser sacado, apenas o saldo REAL!
     if (withdrawAmount > realBalance) {
       setWithdrawError(`Saldo bônus não pode ser sacado. Seu saldo real disponível para saque é de R$ ${realBalance.toFixed(2)}.`);
       return;
@@ -1082,7 +1115,6 @@ export default function App() {
       return;
     }
 
-    // Sucesso!
     setRealBalance(prev => prev - withdrawAmount);
     audio.playTaDah();
     setWithdrawSuccessAlert(true);
@@ -1092,10 +1124,9 @@ export default function App() {
     }, 1600);
   };
 
-  // Simular convite de amigo (+R$ 20 de bônus)
   const handleSimulateInviteFriend = () => {
     setFriendsInvited(prev => prev + 1);
-    setBonusBalance(prev => prev + 20.00); // Bônus não sacável
+    setBonusBalance(prev => prev + 20.00);
     audio.playTaDah();
     setInviteCopied(true);
   };
@@ -1108,10 +1139,15 @@ export default function App() {
       className="min-h-screen bg-gradient-to-b from-sky-300 via-sky-200 to-emerald-200 text-slate-800 font-fredoka flex flex-col items-center justify-start p-2 sm:p-4 select-none"
     >
       
-      {/* HEADER PRINCIPAL */}
+      {/* HEADER PRINCIPAL (100% LIMPO - SEM BOTÃO DE ADMIN VISÍVEL!) */}
       <header className="w-full max-w-xl flex justify-between items-center mb-2 bg-white/95 backdrop-blur-md p-3 rounded-3xl border-4 border-amber-300 shadow-pop-amber">
         <div className="flex items-center gap-2">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center border-2 border-white shadow-md animate-float-wiggle">
+          {/* O passarinho tem um Easter Egg: clicar 5 vezes abre o login do dono */}
+          <div 
+            onClick={handleSecretLogoClick}
+            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center border-2 border-white shadow-md animate-float-wiggle cursor-pointer active:scale-95 transition"
+            title="Red Bird"
+          >
             <span className="text-2xl">🐤</span>
           </div>
           <div>
@@ -1150,7 +1186,7 @@ export default function App() {
             <ArrowUpFromLine className="w-3.5 h-3.5" /> Sacar
           </button>
 
-          {/* Botão Metas */}
+          {/* Metas de Bônus */}
           <button 
             onClick={() => setShowGoalsModal(true)}
             className="btn-pop p-1.5 rounded-2xl border-2 bg-amber-100 border-amber-300 text-amber-800"
@@ -1178,18 +1214,10 @@ export default function App() {
           >
             {sfxActive ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
-
-          {/* Admin */}
-          <button 
-            onClick={() => setShowAdmin(!showAdmin)}
-            className="btn-pop p-1.5 rounded-2xl border-2 bg-purple-100 border-purple-300 text-purple-700"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
         </div>
       </header>
 
-      {/* BARRA DE SALDO DETALHADA (REAL SACÁVEL VS BÔNUS CONTA) */}
+      {/* BARRA DE SALDO DETALHADA */}
       <div className="w-full max-w-xl mb-2 grid grid-cols-2 gap-2">
         <div className="bg-emerald-500 text-white p-2.5 rounded-2xl border-2 border-emerald-600 shadow-sm flex items-center justify-between">
           <div>
@@ -1212,7 +1240,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* BANNER DE METAS E BÔNUS (DEPÓSITO MIN 20 + R$120 BÔNUS / CONVIDE AMIGO + R$20) */}
+      {/* BANNER DE METAS E BÔNUS */}
       <div className="w-full max-w-xl mb-2 bg-gradient-to-r from-rose-500 via-amber-500 to-emerald-500 text-white p-2.5 rounded-2xl border-2 border-amber-300 shadow-sm flex items-center justify-between text-xs font-bold">
         <div className="flex items-center gap-1.5">
           <Gift className="w-4 h-4 text-yellow-200 shrink-0 animate-bounce" />
@@ -1262,58 +1290,6 @@ export default function App() {
           <Lock className="w-2.5 h-2.5 text-emerald-600" /> SHA-256
         </div>
       </div>
-
-      {/* PAINEL ADMIN GGR */}
-      {showAdmin && (
-        <div className="w-full max-w-xl bg-white/95 backdrop-blur-md p-3.5 rounded-3xl border-4 border-purple-300 mb-2.5 text-xs space-y-2.5 shadow-pop-indigo">
-          <div className="flex justify-between items-center pb-1 border-b border-purple-100">
-            <span className="font-black text-purple-700 uppercase tracking-wider flex items-center gap-1 text-sm">
-              <ShieldAlert className="w-4 h-4 text-purple-600" /> Painel da Banca (GGR) 🏰
-            </span>
-            <span className="text-[10px] text-purple-500 font-bold">Chave Pix: {OWNER_PIX_KEY}</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-purple-50 p-2 rounded-2xl border border-purple-200">
-              <span className="text-[10px] text-purple-600 font-bold block">Apostas Totais</span>
-              <span className="font-extrabold text-purple-900">R$ {houseStats.totalBets.toFixed(2)}</span>
-            </div>
-            <div className="bg-purple-50 p-2 rounded-2xl border border-purple-200">
-              <span className="text-[10px] text-purple-600 font-bold block">Total Pago</span>
-              <span className="font-extrabold text-purple-900">R$ {houseStats.totalPaid.toFixed(2)}</span>
-            </div>
-            <div className="bg-purple-50 p-2 rounded-2xl border border-purple-200">
-              <span className="text-[10px] text-purple-600 font-bold block">Lucro da Casa (GGR)</span>
-              <span className={`font-black ${ggr >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                R$ {ggr.toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <span className="text-[11px] font-bold text-purple-800">Rigor da Casa:</span>
-            <div className="flex gap-1.5">
-              {[
-                { id: 'EASY', label: 'Suave (60%)' },
-                { id: 'NORMAL', label: 'Padrão (86%)' },
-                { id: 'HARD', label: 'Triturador (94%)' }
-              ].map(opt => (
-                <button
-                  key={opt.id}
-                  onClick={() => setHouseRigor(opt.id)}
-                  className={`btn-pop py-1 px-2.5 rounded-xl text-[10px] font-black border-2 transition ${
-                    houseRigor === opt.id 
-                      ? 'bg-purple-500 text-white border-purple-600' 
-                      : 'bg-purple-100 text-purple-700 border-purple-200'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ARENA DO JOGO / CANVAS */}
       <div 
@@ -1817,7 +1793,6 @@ export default function App() {
             </p>
 
             <div className="space-y-2">
-              {/* Meta 1: Depósito Mínimo de R$ 20 */}
               <div className={`p-3 rounded-2xl border-2 transition ${hasDeposited && totalDeposited >= 20 ? 'bg-emerald-50 border-emerald-400 text-emerald-950' : 'bg-slate-50 border-slate-300 text-slate-700'}`}>
                 <div className="flex items-center justify-between">
                   <span className="font-black text-sm flex items-center gap-1.5">
@@ -1833,7 +1808,6 @@ export default function App() {
                 </p>
               </div>
 
-              {/* Meta 2: Convidar Amigos */}
               <div className="p-3 rounded-2xl border-2 bg-amber-50 border-amber-300 text-amber-950">
                 <div className="flex items-center justify-between">
                   <span className="font-black text-sm flex items-center gap-1.5">
@@ -1849,7 +1823,6 @@ export default function App() {
                 </p>
               </div>
 
-              {/* Regra do Saldo Bônus */}
               <div className="bg-rose-50 p-2.5 rounded-2xl border border-rose-200 text-rose-900 text-[11px] font-bold">
                 ⚠️ <strong>Atenção:</strong> O saldo de bônus <u>não pode ser sacado diretamente</u>. Ele deve ser utilizado para jogar e apostar. Todo o lucro gerado pelas apostas cai diretamente no seu <strong>Saldo Real</strong> e pode ser sacado para seu Pix!
               </div>
@@ -1960,7 +1933,6 @@ export default function App() {
               ))}
             </div>
 
-            {/* Chave Pix do Dono da Banca */}
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center space-y-2">
               <span className="text-[10px] text-slate-600 font-black uppercase block">Chave Pix Oficial da Banca:</span>
               <div className="bg-emerald-100 text-emerald-950 font-mono font-black text-base py-1.5 px-3 rounded-xl border-2 border-emerald-400 flex items-center justify-center gap-2">
@@ -2014,7 +1986,6 @@ export default function App() {
               >✕</button>
             </div>
 
-            {/* Status da Meta */}
             <div className={`p-2.5 rounded-2xl border-2 text-xs ${hasDeposited && totalDeposited >= 20 ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900'}`}>
               <div className="flex items-center justify-between font-black">
                 <span>Meta de Depósito (mín R$ 20):</span>
@@ -2116,9 +2087,123 @@ export default function App() {
         </div>
       )}
 
+      {/* --- MODAL SECRETO 1: LOGIN DE ADMIN (ACIONADO CLICANDO 5X NO LOGO) --- */}
+      {showAdminLoginModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-purple-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-3.5 text-white animate-in zoom-in-95">
+            <div className="flex justify-between items-center">
+              <h3 className="font-black text-base text-purple-400 flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-purple-400" /> Acesso do Dono da Banca
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowAdminLoginModal(false);
+                  setAdminPasswordError(false);
+                  setAdminPasswordInput('');
+                }}
+                className="text-slate-400 hover:text-white font-bold"
+              >✕</button>
+            </div>
+
+            <p className="text-xs text-slate-400">
+              Área restrita de controle financeiro e retenção da casa. Digite a senha mestra:
+            </p>
+
+            <form onSubmit={handleAdminLoginSubmit} className="space-y-3">
+              <input 
+                type="password"
+                placeholder="Senha mestra..."
+                autoFocus
+                value={adminPasswordInput}
+                onChange={(e) => setAdminPasswordInput(e.target.value)}
+                className="w-full bg-slate-950 border border-purple-500/50 rounded-2xl px-3 py-2 text-sm font-bold text-purple-300 focus:outline-none focus:border-purple-400"
+              />
+
+              {adminPasswordError && (
+                <span className="text-[11px] text-rose-400 font-bold block">
+                  Senha incorreta. Acesso negado.
+                </span>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-2.5 rounded-2xl text-xs uppercase tracking-wider transition"
+              >
+                Entrar no Painel Secreto
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL SECRETO 2: PAINEL DE CONTROLE DO DONO (ADMIN GGR) --- */}
+      {showAdminModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-purple-500 w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-3.5 text-white animate-in zoom-in-95 text-xs">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-purple-400" />
+                <h3 className="font-black text-base text-purple-400">Painel do Dono da Banca (GGR)</h3>
+              </div>
+              <button 
+                onClick={() => setShowAdminModal(false)}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white px-2.5 py-1 rounded-xl font-bold"
+              >✕ Fechar</button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-slate-950 p-2.5 rounded-2xl border border-slate-800">
+                <span className="text-[10px] text-slate-500 font-bold block">Apostas Totais</span>
+                <span className="font-mono font-black text-white text-sm">R$ {houseStats.totalBets.toFixed(2)}</span>
+              </div>
+              <div className="bg-slate-950 p-2.5 rounded-2xl border border-slate-800">
+                <span className="text-[10px] text-slate-500 font-bold block">Total Pago</span>
+                <span className="font-mono font-black text-white text-sm">R$ {houseStats.totalPaid.toFixed(2)}</span>
+              </div>
+              <div className="bg-slate-950 p-2.5 rounded-2xl border border-slate-800">
+                <span className="text-[10px] text-slate-500 font-bold block">Lucro da Casa (GGR)</span>
+                <span className={`font-mono font-black text-sm ${ggr >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  R$ {ggr.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
+              <label className="text-[11px] font-black text-purple-400 uppercase block">
+                Rigor do Crash da Casa (Taxa de Retenção):
+              </label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { id: 'EASY', label: 'Suave (60%)' },
+                  { id: 'NORMAL', label: 'Padrão (86%)' },
+                  { id: 'HARD', label: 'Triturador (94%)' }
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setHouseRigor(opt.id)}
+                    className={`py-2 px-2 rounded-xl text-[10px] font-black border transition ${
+                      houseRigor === opt.id 
+                        ? 'bg-purple-600 text-white border-purple-400 shadow-md' 
+                        : 'bg-slate-800 text-slate-400 hover:text-white border-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-[11px] text-slate-400">
+              <p>Chave Pix de Recebimento configurada: <strong className="text-emerald-400 font-mono">{OWNER_PIX_KEY}</strong></p>
+              <p className="text-[10px] text-slate-500 mt-1">Dica: Para abrir este painel novamente sem ninguém ver, clique 5 vezes seguidas no passarinho do logo ou adicione ?admin=99985280205 na URL.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* FOOTER */}
       <footer className="mt-3 text-[11px] text-sky-950 font-bold text-center">
-        RED BIRD GET MONEY 🐤 • Chave Pix Oficial da Banca: <strong className="font-mono">{OWNER_PIX_KEY}</strong> • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">Espaço</kbd> Pular • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">Z</kbd> Sacar 1 • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">X</kbd> Sacar 2
+        RED BIRD GET MONEY 🐤 • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">Espaço</kbd> Pular • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">Z</kbd> Sacar 1 • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">X</kbd> Sacar 2
       </footer>
     </div>
   );
