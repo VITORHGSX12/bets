@@ -749,8 +749,8 @@ export default function App() {
     const rand = Math.random();
     let maxMult = 1.00;
 
-    const threshold1 = houseRigor === 'EASY' ? 0.60 : houseRigor === 'HARD' ? 0.94 : 0.86;
-    const threshold2 = houseRigor === 'EASY' ? 0.85 : houseRigor === 'HARD' ? 0.98 : 0.95;
+    const threshold1 = houseRigor === 'EASY' ? 0.60 : houseRigor === 'HARD' ? 0.94 : 0.75;
+    const threshold2 = houseRigor === 'EASY' ? 0.85 : houseRigor === 'HARD' ? 0.98 : 0.90;
 
     if (rand < threshold1) {
       maxMult = parseFloat((Math.random() * 0.28 + 1.02).toFixed(2));
@@ -1622,7 +1622,7 @@ export default function App() {
                 <div className="grid grid-cols-3 gap-1.5">
                   {[
                     { id: 'EASY', label: 'Suave (60%)' },
-                    { id: 'NORMAL', label: 'Padrão (86%)' },
+                    { id: 'NORMAL', label: 'Padrão (75%)' },
                     { id: 'HARD', label: 'Triturador (94%)' }
                   ].map(opt => (
                     <button
@@ -2693,7 +2693,7 @@ export default function App() {
               <div className="grid grid-cols-3 gap-1.5">
                 {[
                   { id: 'EASY', label: 'Suave (60%)' },
-                  { id: 'NORMAL', label: 'Padrão (86%)' },
+                  { id: 'NORMAL', label: 'Padrão (75%)' },
                   { id: 'HARD', label: 'Triturador (94%)' }
                 ].map(opt => (
                   <button
