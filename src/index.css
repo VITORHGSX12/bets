@@ -4,8 +4,35 @@
 
 @layer base {
   body {
+    font-family: 'Fredoka', cursive, sans-serif;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
+/* Animações e Efeitos Cartoon */
+@keyframes floatWiggle {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50% { transform: translateY(-6px) rotate(1.5deg); }
+}
+
+@keyframes rainbowShine {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.animate-float-wiggle {
+  animation: floatWiggle 3s ease-in-out infinite;
+}
+
+.animate-rainbow {
+  animation: rainbowShine 8s linear infinite;
+}
+
+/* Botão estilo 3D de joguinho infantil pop */
+.btn-pop {
+  transition: all 0.1s ease;
+}
+.btn-pop:active {
+  transform: translateY(4px);
+}

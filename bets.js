@@ -3,23 +3,30 @@ import {
   Play, 
   Award, 
   Settings, 
-  DollarSign, 
+  Coins, 
   Volume2, 
   VolumeX, 
+  Music, 
   RotateCcw, 
   Users, 
-  TrendingUp, 
+  Sparkles, 
+  Heart, 
+  Smile, 
   ShieldAlert, 
   PlusCircle, 
   Zap,
-  Sparkles
+  Star
 } from 'lucide-react';
 
-// --- SISTEMA DE ÁUDIO SINTETIZADO (Web Audio API) ---
-class SoundEffects {
+// --- SISTEMA DE ÁUDIO SINTETIZADO INFANTIL & MÚSICA DE FUNDO (Web Audio API) ---
+class CartoonAudioEngine {
   constructor() {
     this.ctx = null;
-    this.muted = false;
+    this.sfxMuted = false;
+    this.bgmMuted = false;
+    this.bgmPlaying = false;
+    this.bgmTimer = null;
+    this.currentStep = 0;
   }
 
   init() {
@@ -34,81 +41,103 @@ class SoundEffects {
     }
   }
 
-  playFlap() {
-    if (this.muted) return;
+  // Som de Mola Cartunesca (Boing!) quando o passarinho pula
+  playBoing() {
+    if (this.sfxMuted) return;
     this.init();
     if (!this.ctx) return;
 
+    const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-    const now = this.ctx.currentTime;
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(420, now);
-    osc.frequency.exponentialRampToValueAtTime(750, now + 0.08);
+    // Glissando ascendente característico de mola cartoon
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(560, now + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(320, now + 0.22);
 
-    gain.gain.setValueAtTime(0.18, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.23);
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.1);
+    osc.stop(now + 0.24);
   }
 
-  playCashout() {
-    if (this.muted) return;
+  // Som de Vitória Infantil Festiva (Ta-Dah! ✨)
+  playTaDah() {
+    if (this.sfxMuted) return;
     this.init();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // Acorde C Maior alegre
+    // Fanfarra de brinquedo C-E-G-C alegre
+    const notes = [
+      { f: 523.25, d: 0.1, delay: 0 },
+      { f: 659.25, d: 0.1, delay: 0.1 },
+      { f: 783.99, d: 0.12, delay: 0.2 },
+      { f: 1046.50, d: 0.45, delay: 0.32 }
+    ];
 
-    notes.forEach((freq, idx) => {
+    notes.forEach(n => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      const startTime = now + idx * 0.07;
+      const t = now + n.delay;
 
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, startTime);
+      osc.frequency.setValueAtTime(n.f, t);
 
-      gain.gain.setValueAtTime(0.2, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+      gain.gain.setValueAtTime(0.28, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + n.d);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
 
-      osc.start(startTime);
-      osc.stop(startTime + 0.28);
+      osc.start(t);
+      osc.stop(t + n.d + 0.05);
     });
   }
 
-  playCrash() {
-    if (this.muted) return;
+  // Som de Trompete Cômico de Desenho Animado (Womp Womp Womp Woooomp...)
+  playWompWomp() {
+    if (this.sfxMuted) return;
     this.init();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    // Notas cômicas descendentes
+    const pitches = [311.13, 293.66, 277.18, 246.94]; // Eb4 -> D4 -> Db4 -> B3
 
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(220, now);
-    osc.frequency.exponentialRampToValueAtTime(40, now + 0.35);
+    pitches.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const t = now + idx * 0.18;
+      const dur = idx === 3 ? 0.45 : 0.15;
 
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, t);
+      // Pitch drop no final
+      if (idx === 3) {
+        osc.frequency.exponentialRampToValueAtTime(140, t + dur);
+      }
 
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + dur);
 
-    osc.start(now);
-    osc.stop(now + 0.36);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + dur + 0.02);
+    });
   }
 
-  playBetStart() {
-    if (this.muted) return;
+  // Moedinha Plim!
+  playCoin() {
+    if (this.sfxMuted) return;
     this.init();
     if (!this.ctx) return;
 
@@ -117,26 +146,120 @@ class SoundEffects {
     const gain = this.ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, now);
-    osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+    osc.frequency.setValueAtTime(987.77, now); // B5
+    osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
 
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.17);
+    osc.stop(now + 0.32);
+  }
+
+  // Trilha Sonora Chiptune / Caixinha de Brinquedos Infantil em Loop
+  startMusic() {
+    this.init();
+    if (this.bgmPlaying || this.bgmMuted || !this.ctx) return;
+    this.bgmPlaying = true;
+
+    // Melodia animada infantil estilo Mario / Fazendinha (Marimba fofa)
+    // Escala: C4, D4, E4, F4, G4, A4, B4, C5
+    const melody = [
+      { f: 523.25, dur: 0.18 }, // C5
+      { f: 523.25, dur: 0.18 }, // C5
+      { f: 659.25, dur: 0.18 }, // E5
+      { f: 783.99, dur: 0.28 }, // G5
+      { f: 659.25, dur: 0.18 }, // E5
+      { f: 783.99, dur: 0.28 }, // G5
+      { f: 880.00, dur: 0.35 }, // A5
+      { f: 783.99, dur: 0.35 }, // G5
+
+      { f: 698.46, dur: 0.18 }, // F5
+      { f: 659.25, dur: 0.18 }, // E5
+      { f: 587.33, dur: 0.28 }, // D5
+      { f: 523.25, dur: 0.18 }, // C5
+      { f: 587.33, dur: 0.18 }, // D5
+      { f: 659.25, dur: 0.28 }, // E5
+      { f: 523.25, dur: 0.45 }, // C5
+      { f: 0,      dur: 0.15 }  // pausa
+    ];
+
+    const stepInterval = 210; // ms por tempo
+
+    const tick = () => {
+      if (!this.bgmPlaying || this.bgmMuted) return;
+
+      const note = melody[this.currentStep % melody.length];
+      this.currentStep++;
+
+      if (note.f > 0 && this.ctx) {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        // Timbre de marimba/xilofone suave de brinquedo
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(note.f, now);
+
+        // Volume bem suave para ficar no fundo
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + note.dur);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + note.dur + 0.05);
+
+        // Baixo fofo de acompanhamento a cada 2 tempos
+        if (this.currentStep % 2 === 0) {
+          const bassOsc = this.ctx.createOscillator();
+          const bassGain = this.ctx.createGain();
+          bassOsc.type = 'sine';
+          bassOsc.frequency.setValueAtTime(note.f / 4, now);
+          bassGain.gain.setValueAtTime(0.08, now);
+          bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          bassOsc.connect(bassGain);
+          bassGain.connect(this.ctx.destination);
+          bassOsc.start(now);
+          bassOsc.stop(now + 0.2);
+        }
+      }
+
+      this.bgmTimer = setTimeout(tick, stepInterval);
+    };
+
+    tick();
+  }
+
+  stopMusic() {
+    this.bgmPlaying = false;
+    if (this.bgmTimer) {
+      clearTimeout(this.bgmTimer);
+      this.bgmTimer = null;
+    }
+  }
+
+  toggleMusic() {
+    this.bgmMuted = !this.bgmMuted;
+    if (this.bgmMuted) {
+      this.stopMusic();
+    } else {
+      this.startMusic();
+    }
+    return !this.bgmMuted;
   }
 }
 
-const sfx = new SoundEffects();
+const audio = new CartoonAudioEngine();
 
 export default function App() {
-  // Saldo persistido localmente ou padrão R$ 1000
+  // Saldo Infantil "Moedinhas Mágicas"
   const [balance, setBalance] = useState(() => {
-    const saved = localStorage.getItem('redbird_balance');
+    const saved = localStorage.getItem('redbird_balance_v2');
     return saved ? parseFloat(saved) : 1000.00;
   });
 
@@ -146,77 +269,100 @@ export default function App() {
   const [gameState, setGameState] = useState('IDLE'); // IDLE, FLYING, CRASHED, CASHOUT
   const [multiplier, setMultiplier] = useState(1.00);
   const [winAmount, setWinAmount] = useState(0);
-  const [soundMuted, setSoundMuted] = useState(false);
+
+  // Estados de áudio e modal
+  const [musicActive, setMusicActive] = useState(false);
+  const [sfxActive, setSfxActive] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
 
-  // Histórico de Multiplicadores Recentes (estilo Aviator)
+  // Histórico estilo Docinho & Estrelas
   const [history, setHistory] = useState([
-    { mult: 1.15, crashed: true },
-    { mult: 2.45, crashed: false },
-    { mult: 1.08, crashed: true },
-    { mult: 4.20, crashed: false },
     { mult: 1.25, crashed: true },
-    { mult: 12.8, crashed: false },
+    { mult: 2.10, crashed: false },
+    { mult: 1.05, crashed: true },
+    { mult: 3.50, crashed: false },
+    { mult: 1.12, crashed: true },
+    { mult: 7.80, crashed: false },
   ]);
 
-  // Jogadores simulados ao vivo na rodada
+  // Jogadores simulados com nomes fofos de bichinhos e crianças
   const [livePlayers, setLivePlayers] = useState([
-    { name: 'Lucas_SP', bet: 25, cashedOut: false, win: 0, mult: 0 },
-    { name: 'GamerBR99', bet: 50, cashedOut: false, win: 0, mult: 0 },
-    { name: 'Beatriz_R', bet: 10, cashedOut: false, win: 0, mult: 0 },
-    { name: 'FelipeM', bet: 100, cashedOut: false, win: 0, mult: 0 },
-    { name: 'Carol_Win', bet: 20, cashedOut: false, win: 0, mult: 0 },
+    { name: 'Ursinho_Pimpão 🧸', bet: 20, cashedOut: false, win: 0, mult: 0 },
+    { name: 'Joaninha_Feliz 🐞', bet: 50, cashedOut: false, win: 0, mult: 0 },
+    { name: 'Pipoca_Doce 🍿', bet: 10, cashedOut: false, win: 0, mult: 0 },
+    { name: 'Dino_Baby 🦖', bet: 100, cashedOut: false, win: 0, mult: 0 },
+    { name: 'Coelhinho_Saltador 🐰', bet: 25, cashedOut: false, win: 0, mult: 0 },
   ]);
 
-  // Regra de Retenção da Casa
-  const [houseRigor, setHouseRigor] = useState('NORMAL'); // 'EASY' (70% crash), 'NORMAL' (90% crash), 'HARD' (95% crash)
+  // Regra de Retenção da Casa de Doces
+  const [houseRigor, setHouseRigor] = useState('NORMAL');
   const [targetMaxMultiplier, setTargetMaxMultiplier] = useState(1.00);
   const [forceCrash, setForceCrash] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
   const [houseStats, setHouseStats] = useState(() => {
-    const saved = localStorage.getItem('redbird_housestats');
+    const saved = localStorage.getItem('redbird_housestats_v2');
     return saved ? JSON.parse(saved) : { totalBets: 0, totalPaid: 0 };
   });
 
   const canvasRef = useRef(null);
   const reqIdRef = useRef(null);
 
-  // Física do Jogo
-  const birdRef = useRef({ y: 150, vy: 0, wingAngle: 0 });
+  // Física do Piu-Piu
+  const birdRef = useRef({ y: 140, vy: 0, wingAngle: 0, blushScale: 1 });
   const pipesRef = useRef([]);
   const multRef = useRef(1.00);
   const cloudsRef = useRef([
-    { x: 50, y: 35, scale: 0.8 },
-    { x: 190, y: 75, scale: 1.2 },
-    { x: 330, y: 40, scale: 0.9 },
-    { x: 440, y: 85, scale: 1.0 }
+    { x: 40, y: 35, scale: 0.9, eyeBlink: 0 },
+    { x: 190, y: 70, scale: 1.2, eyeBlink: 0 },
+    { x: 340, y: 30, scale: 1.0, eyeBlink: 0 },
+    { x: 460, y: 80, scale: 1.1, eyeBlink: 0 }
   ]);
-  const particlesRef = useRef([]);
+  const starsRef = useRef([]);
+  const hillsRef = useRef([
+    { x: 0, h: 55, color: '#86efac' },
+    { x: 200, h: 70, color: '#4ade80' },
+    { x: 400, h: 60, color: '#86efac' }
+  ]);
 
   // Salvar saldo
   useEffect(() => {
-    localStorage.setItem('redbird_balance', balance.toString());
+    localStorage.setItem('redbird_balance_v2', balance.toString());
   }, [balance]);
 
   useEffect(() => {
-    localStorage.setItem('redbird_housestats', JSON.stringify(houseStats));
+    localStorage.setItem('redbird_housestats_v2', JSON.stringify(houseStats));
   }, [houseStats]);
 
-  // Controle de som mudo
-  const toggleSound = () => {
-    const next = !soundMuted;
-    setSoundMuted(next);
-    sfx.muted = next;
+  // Ativar música infantil no primeiro clique geral
+  const handleUserGestureAudio = () => {
+    if (!musicActive && !audio.bgmMuted) {
+      audio.startMusic();
+      setMusicActive(true);
+    }
   };
 
-  // Sorteio de Retenção da Casa
+  const toggleMusicButton = () => {
+    audio.init();
+    const active = audio.toggleMusic();
+    setMusicActive(active);
+  };
+
+  const toggleSfxButton = () => {
+    const next = !sfxActive;
+    setSfxActive(next);
+    audio.sfxMuted = !next;
+  };
+
+  // Iniciar Rodada
   const startRound = () => {
+    handleUserGestureAudio();
+
     if (balance < bet || bet <= 0) {
       setShowDepositModal(true);
       return;
     }
 
-    sfx.playBetStart();
+    audio.playCoin();
     setBalance(prev => prev - bet);
     setHouseStats(prev => ({ ...prev, totalBets: prev.totalBets + bet }));
 
@@ -224,60 +370,62 @@ export default function App() {
     let maxMult = 1.00;
     let willForce = true;
 
-    // Ajuste de retenção com base no modo
-    const threshold1 = houseRigor === 'EASY' ? 0.65 : houseRigor === 'HARD' ? 0.95 : 0.88;
-    const threshold2 = houseRigor === 'EASY' ? 0.88 : houseRigor === 'HARD' ? 0.98 : 0.95;
+    const threshold1 = houseRigor === 'EASY' ? 0.60 : houseRigor === 'HARD' ? 0.94 : 0.86;
+    const threshold2 = houseRigor === 'EASY' ? 0.85 : houseRigor === 'HARD' ? 0.98 : 0.95;
 
     if (rand < threshold1) {
-      maxMult = parseFloat((Math.random() * 0.28 + 1.02).toFixed(2));
+      maxMult = parseFloat((Math.random() * 0.28 + 1.03).toFixed(2));
       willForce = true;
     } else if (rand < threshold2) {
-      maxMult = parseFloat((Math.random() * 0.90 + 1.30).toFixed(2));
+      maxMult = parseFloat((Math.random() * 0.95 + 1.32).toFixed(2));
       willForce = true;
     } else {
-      maxMult = parseFloat((Math.random() * 12.00 + 2.20).toFixed(2));
+      maxMult = parseFloat((Math.random() * 12.00 + 2.30).toFixed(2));
       willForce = false;
     }
 
     setTargetMaxMultiplier(maxMult);
     setForceCrash(willForce);
 
-    // Reset de bots simulados
+    // Reset de amiguinhos da rodada
     setLivePlayers([
-      { name: 'Lucas_SP', bet: Math.floor(Math.random() * 30 + 10), cashedOut: false, win: 0, target: 1.15 + Math.random() * 0.6 },
-      { name: 'GamerBR99', bet: Math.floor(Math.random() * 50 + 20), cashedOut: false, win: 0, target: 1.25 + Math.random() * 1.5 },
-      { name: 'Beatriz_R', bet: 10, cashedOut: false, win: 0, target: 1.10 + Math.random() * 0.4 },
-      { name: 'FelipeM', bet: Math.floor(Math.random() * 100 + 30), cashedOut: false, win: 0, target: 1.40 + Math.random() * 2.0 },
-      { name: 'Carol_Win', bet: Math.floor(Math.random() * 40 + 15), cashedOut: false, win: 0, target: 1.30 + Math.random() * 0.8 },
+      { name: 'Ursinho_Pimpão 🧸', bet: Math.floor(Math.random() * 25 + 10), cashedOut: false, win: 0, target: 1.15 + Math.random() * 0.5 },
+      { name: 'Joaninha_Feliz 🐞', bet: Math.floor(Math.random() * 50 + 20), cashedOut: false, win: 0, target: 1.25 + Math.random() * 1.2 },
+      { name: 'Pipoca_Doce 🍿', bet: 10, cashedOut: false, win: 0, target: 1.10 + Math.random() * 0.3 },
+      { name: 'Dino_Baby 🦖', bet: Math.floor(Math.random() * 80 + 30), cashedOut: false, win: 0, target: 1.40 + Math.random() * 1.8 },
+      { name: 'Coelhinho_Saltador 🐰', bet: Math.floor(Math.random() * 30 + 15), cashedOut: false, win: 0, target: 1.30 + Math.random() * 0.7 },
     ]);
 
-    // Reset da física
-    birdRef.current = { y: 150, vy: -2, wingAngle: 0 };
+    // Reset da física do Piu-Piu
+    birdRef.current = { y: 140, vy: -2, wingAngle: 0, blushScale: 1 };
     pipesRef.current = [
-      { x: 320, top: 80, bottom: 110 },
-      { x: 500, top: 120, bottom: 80 }
+      { x: 340, top: 80, bottom: 110, stripeOffset: 0 },
+      { x: 530, top: 120, bottom: 80, stripeOffset: 0 }
     ];
-    particlesRef.current = [];
+    starsRef.current = [];
     multRef.current = 1.00;
     setMultiplier(1.00);
     setGameState('FLYING');
   };
 
   const jump = () => {
+    handleUserGestureAudio();
     if (gameState === 'FLYING') {
-      birdRef.current.vy = -5.5;
-      sfx.playFlap();
+      birdRef.current.vy = -5.4;
+      audio.playBoing();
 
-      // Gerar partículas suaves de penas/vento
-      for (let i = 0; i < 3; i++) {
-        particlesRef.current.push({
-          x: 70 - 10,
-          y: birdRef.current.y + (Math.random() * 10 - 5),
-          vx: -(Math.random() * 2 + 1),
-          vy: Math.random() * 2 - 1,
-          size: Math.random() * 3 + 2,
-          alpha: 0.8,
-          color: '#ffffff'
+      // Gerar estrelinhas e coraçõezinhos brilhantes no pulo
+      for (let i = 0; i < 4; i++) {
+        starsRef.current.push({
+          x: 65 - Math.random() * 10,
+          y: birdRef.current.y + (Math.random() * 14 - 7),
+          vx: -(Math.random() * 2.5 + 1),
+          vy: (Math.random() * 2 - 1),
+          size: Math.random() * 6 + 4,
+          rot: Math.random() * Math.PI,
+          type: Math.random() > 0.4 ? 'star' : 'heart',
+          color: ['#fde047', '#f472b6', '#38bdf8', '#a78bfa'][Math.floor(Math.random() * 4)],
+          alpha: 1.0
         });
       }
     }
@@ -290,15 +438,13 @@ export default function App() {
     setWinAmount(win);
     setBalance(prev => prev + win);
     setHouseStats(prev => ({ ...prev, totalPaid: prev.totalPaid + win }));
-    sfx.playCashout();
+    audio.playTaDah();
 
-    // Adiciona ao histórico
-    setHistory(prev => [{ mult: parseFloat(finalMult.toFixed(2)), crashed: false }, ...prev.slice(0, 9)]);
-
+    setHistory(prev => [{ mult: parseFloat(finalMult.toFixed(2)), crashed: false }, ...prev.slice(0, 7)]);
     setGameState('CASHOUT');
   };
 
-  // Suporte a Teclado (Espaço para pular / Enter para ação)
+  // Atalhos de teclado infantis
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === 'Space') {
@@ -321,7 +467,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState, bet, balance]);
 
-  // Loop de Animação e Renderização Canvas
+  // Loop de Animação e Renderização Infantil
   useEffect(() => {
     if (gameState !== 'FLYING') return;
 
@@ -330,18 +476,16 @@ export default function App() {
     const ctx = canvas.getContext('2d');
 
     const loop = () => {
-      // Atualiza multiplicador progressivamente
       multRef.current += 0.008;
       const currentMult = multRef.current;
       setMultiplier(currentMult);
 
-      // Checa Auto Cash Out configurado
       if (enableAutoCashout && currentMult >= autoCashout) {
         cashOut();
         return;
       }
 
-      // Atualiza simulação de bots sacando
+      // Amiguinhos bots sacando
       setLivePlayers(prev => prev.map(p => {
         if (!p.cashedOut && currentMult >= p.target) {
           return { ...p, cashedOut: true, win: p.bet * currentMult, mult: currentMult };
@@ -349,29 +493,35 @@ export default function App() {
         return p;
       }));
 
-      // Verificação de Crash Programado pela Casa
+      // Crash da casa
       if (currentMult >= targetMaxMultiplier && forceCrash) {
-        birdRef.current.vy += 2.5; // Força queda abrupta no cano
+        birdRef.current.vy += 2.6;
       }
 
-      // Física do Pássaro
-      birdRef.current.vy += 0.38;
+      // Física do Piu-Piu
+      birdRef.current.vy += 0.36;
       birdRef.current.y += birdRef.current.vy;
-      birdRef.current.wingAngle += 0.35;
+      birdRef.current.wingAngle += 0.38;
 
-      // Nuvens no fundo
+      // Nuvens fofas flutuando
       cloudsRef.current.forEach(c => {
         c.x -= 0.6;
-        if (c.x < -70) c.x = 440;
+        if (c.x < -80) c.x = 440;
       });
 
-      // Movimento dos Tubos
-      pipesRef.current.forEach(p => { p.x -= 2.7; });
+      // Movimento das Colinas Verdes
+      hillsRef.current.forEach(h => {
+        h.x -= 0.8;
+        if (h.x < -200) h.x = 400;
+      });
+
+      // Movimento dos Tubos de Pirulito/Brinquedo
+      pipesRef.current.forEach(p => { p.x -= 2.6; });
 
       if (pipesRef.current.length && pipesRef.current[0].x < -60) {
         pipesRef.current.shift();
         const lastX = pipesRef.current[pipesRef.current.length - 1]?.x || 300;
-        const topH = Math.floor(Math.random() * 100) + 45;
+        const topH = Math.floor(Math.random() * 95) + 50;
         pipesRef.current.push({ x: lastX + 180, top: topH, bottom: 260 - topH - 95 });
       }
 
@@ -381,153 +531,289 @@ export default function App() {
       const r = 18;
       let hit = false;
 
-      // Colisão com teto e chão
-      if (birdY - r <= 0 || birdY + r >= 300) hit = true;
+      // Teto e chão
+      if (birdY - r <= 0 || birdY + r >= 285) hit = true;
 
-      // Colisão com canos
+      // Canos
       pipesRef.current.forEach(p => {
-        if (birdX + r > p.x && birdX - r < p.x + 48) {
+        if (birdX + r > p.x && birdX - r < p.x + 52) {
           if (birdY - r < p.top || birdY + r > 300 - p.bottom) {
             hit = true;
           }
         }
       });
 
-      // Atualiza partículas
-      particlesRef.current.forEach(pt => {
-        pt.x += pt.vx;
-        pt.y += pt.vy;
-        pt.alpha -= 0.03;
+      // Atualiza estrelinhas
+      starsRef.current.forEach(st => {
+        st.x += st.vx;
+        st.y += st.vy;
+        st.rot += 0.1;
+        st.alpha -= 0.025;
       });
-      particlesRef.current = particlesRef.current.filter(pt => pt.alpha > 0);
+      starsRef.current = starsRef.current.filter(st => st.alpha > 0);
 
-      // --- DESENHO NO CANVAS ---
+      // --- DESENHO NO CANVAS INFANTIL ---
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Céu com Gradiente Vivo
+      // Céu Azul Claro Ensolarado
       const skyGrad = ctx.createLinearGradient(0, 0, 0, 300);
-      skyGrad.addColorStop(0, '#0284c7');
-      skyGrad.addColorStop(0.6, '#38bdf8');
-      skyGrad.addColorStop(1, '#bae6fd');
+      skyGrad.addColorStop(0, '#67e8f9'); // Ciano clarinho
+      skyGrad.addColorStop(0.5, '#bae6fd');
+      skyGrad.addColorStop(1, '#fef08a'); // Amarelinho ensolarado no horizonte
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Sol no canto
-      ctx.fillStyle = 'rgba(253, 224, 71, 0.4)';
-      ctx.beginPath();
-      ctx.arc(360, 40, 35, 0, Math.PI * 2);
-      ctx.fill();
+      // Arco-Íris Mágico Fofo ao Fundo
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      const rainbowColors = ['#f87171', '#fb923c', '#facc15', '#4ade80', '#60a5fa', '#c084fc'];
+      rainbowColors.forEach((color, i) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(200, 320, 180 - i * 6, Math.PI, 0);
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      // Sol Sorridente
+      ctx.save();
       ctx.fillStyle = '#fde047';
       ctx.beginPath();
-      ctx.arc(360, 40, 24, 0, Math.PI * 2);
+      ctx.arc(355, 45, 24, 0, Math.PI * 2);
       ctx.fill();
+      // Raios do sol
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 3;
+      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+        ctx.beginPath();
+        ctx.moveTo(355 + Math.cos(angle) * 28, 45 + Math.sin(angle) * 28);
+        ctx.lineTo(355 + Math.cos(angle) * 36, 45 + Math.sin(angle) * 36);
+        ctx.stroke();
+      }
+      // Carinha do sol
+      ctx.fillStyle = '#78350f';
+      ctx.beginPath();
+      ctx.arc(350, 42, 2.5, 0, Math.PI * 2); // olho esquerdo
+      ctx.arc(362, 42, 2.5, 0, Math.PI * 2); // olho direito
+      ctx.fill();
+      // Sorriso do sol
+      ctx.beginPath();
+      ctx.arc(356, 46, 5, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+      ctx.restore();
 
-      // Nuvens
+      // Nuvens Fofas com Bochechas Rosadas
       cloudsRef.current.forEach(c => {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
         ctx.beginPath();
         ctx.arc(c.x, c.y, 16 * c.scale, 0, Math.PI * 2);
-        ctx.arc(c.x + 15 * c.scale, c.y - 8 * c.scale, 20 * c.scale, 0, Math.PI * 2);
-        ctx.arc(c.x + 32 * c.scale, c.y, 16 * c.scale, 0, Math.PI * 2);
+        ctx.arc(c.x + 16 * c.scale, c.y - 8 * c.scale, 20 * c.scale, 0, Math.PI * 2);
+        ctx.arc(c.x + 34 * c.scale, c.y, 16 * c.scale, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bochechas rosadas na nuvem
+        ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
+        ctx.beginPath();
+        ctx.arc(c.x + 8 * c.scale, c.y + 2 * c.scale, 4 * c.scale, 0, Math.PI * 2);
+        ctx.arc(c.x + 24 * c.scale, c.y + 2 * c.scale, 4 * c.scale, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Olhinhos felizes da nuvem
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(c.x + 11 * c.scale, c.y - 1 * c.scale, 2.5 * c.scale, Math.PI, 0);
+        ctx.arc(c.x + 21 * c.scale, c.y - 1 * c.scale, 2.5 * c.scale, Math.PI, 0);
+        ctx.stroke();
+      });
+
+      // Colinas Verdes Ensolaradas no Chão
+      hillsRef.current.forEach(h => {
+        ctx.fillStyle = h.color;
+        ctx.beginPath();
+        ctx.ellipse(h.x + 100, 310, 140, h.h, 0, 0, Math.PI * 2);
         ctx.fill();
       });
 
-      // Desenho dos Tubos Cartoon
-      pipesRef.current.forEach(p => {
-        // Tubo Superior
-        const gradTop = ctx.createLinearGradient(p.x, 0, p.x + 48, 0);
-        gradTop.addColorStop(0, '#15803d');
-        gradTop.addColorStop(0.3, '#22c55e');
-        gradTop.addColorStop(1, '#166534');
-        ctx.fillStyle = gradTop;
-        ctx.fillRect(p.x, 0, 48, p.top);
-        ctx.strokeStyle = '#052e16';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(p.x, 0, 48, p.top);
+      // Gramado Verde fofinho no fundo
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(0, 285, canvas.width, 15);
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(0, 296, canvas.width, 4);
 
-        // Borda do topo
-        ctx.fillRect(p.x - 4, p.top - 18, 56, 18);
-        ctx.strokeRect(p.x - 4, p.top - 18, 56, 18);
+      // Florzinhas balançando na grama
+      for (let fx = 20; fx < canvas.width; fx += 55) {
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(fx, 286, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#f472b6';
+        ctx.beginPath();
+        ctx.arc(fx - 3, 286, 2, 0, Math.PI * 2);
+        ctx.arc(fx + 3, 286, 2, 0, Math.PI * 2);
+        ctx.arc(fx, 283, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Tubos de Pirulito / Brinquedo Cartoon (Cores Doces & Listras)
+      pipesRef.current.forEach(p => {
+        // Tubo Superior (Estilo Pirulito Verde Limão com listras)
+        ctx.save();
+        ctx.fillStyle = '#4ade80';
+        ctx.fillRect(p.x, 0, 52, p.top);
+        ctx.strokeStyle = '#15803d';
+        ctx.lineWidth = 3.5;
+        ctx.strokeRect(p.x, 0, 52, p.top);
+
+        // Listras diagonais de doce
+        ctx.fillStyle = '#86efac';
+        for (let y = 0; y < p.top; y += 22) {
+          ctx.beginPath();
+          ctx.moveTo(p.x + 2, y);
+          ctx.lineTo(p.x + 50, y + 14);
+          ctx.lineTo(p.x + 50, y + 22);
+          ctx.lineTo(p.x + 2, y + 8);
+          ctx.fill();
+        }
+
+        // Tampa arredondada fofa do tubo superior
+        ctx.fillStyle = '#22c55e';
+        ctx.beginPath();
+        ctx.roundRect(p.x - 4, p.top - 20, 60, 20, 8);
+        ctx.fill();
+        ctx.stroke();
 
         // Tubo Inferior
-        const gradBot = ctx.createLinearGradient(p.x, 0, p.x + 48, 0);
-        gradBot.addColorStop(0, '#15803d');
-        gradBot.addColorStop(0.3, '#22c55e');
-        gradBot.addColorStop(1, '#166534');
-        ctx.fillStyle = gradBot;
-        ctx.fillRect(p.x, 300 - p.bottom, 48, p.bottom);
-        ctx.strokeRect(p.x, 300 - p.bottom, 48, p.bottom);
+        ctx.fillStyle = '#4ade80';
+        ctx.fillRect(p.x, 300 - p.bottom, 52, p.bottom);
+        ctx.strokeStyle = '#15803d';
+        ctx.lineWidth = 3.5;
+        ctx.strokeRect(p.x, 300 - p.bottom, 52, p.bottom);
 
-        // Borda inferior
-        ctx.fillRect(p.x - 4, 300 - p.bottom, 56, 18);
-        ctx.strokeRect(p.x - 4, 300 - p.bottom, 56, 18);
-      });
+        // Listras no tubo inferior
+        ctx.fillStyle = '#86efac';
+        for (let y = 300 - p.bottom; y < 300; y += 22) {
+          ctx.beginPath();
+          ctx.moveTo(p.x + 2, y);
+          ctx.lineTo(p.x + 50, y + 14);
+          ctx.lineTo(p.x + 50, y + 22);
+          ctx.lineTo(p.x + 2, y + 8);
+          ctx.fill();
+        }
 
-      // Renderiza Partículas
-      particlesRef.current.forEach(pt => {
-        ctx.fillStyle = pt.color;
-        ctx.globalAlpha = Math.max(0, pt.alpha);
+        // Tampa arredondada fofa do tubo inferior
+        ctx.fillStyle = '#22c55e';
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.roundRect(p.x - 4, 300 - p.bottom, 60, 20, 8);
         ctx.fill();
-        ctx.globalAlpha = 1.0;
+        ctx.stroke();
+        ctx.restore();
       });
 
-      // Desenho do Personagem Red Bird
+      // Estrelinhas e Corações flutuantes do Piu-Piu
+      starsRef.current.forEach(st => {
+        ctx.save();
+        ctx.translate(st.x, st.y);
+        ctx.rotate(st.rot);
+        ctx.globalAlpha = Math.max(0, st.alpha);
+        ctx.fillStyle = st.color;
+
+        if (st.type === 'star') {
+          // Desenha estrelinha
+          ctx.beginPath();
+          for (let s = 0; s < 5; s++) {
+            ctx.lineTo(Math.cos((18 + s * 72) * 0.0174) * st.size, -Math.sin((18 + s * 72) * 0.0174) * st.size);
+            ctx.lineTo(Math.cos((54 + s * 72) * 0.0174) * (st.size / 2), -Math.sin((54 + s * 72) * 0.0174) * (st.size / 2));
+          }
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          // Desenha coraçãozinho
+          ctx.beginPath();
+          ctx.arc(-st.size / 3, 0, st.size / 3, Math.PI, 0, false);
+          ctx.arc(st.size / 3, 0, st.size / 3, Math.PI, 0, false);
+          ctx.lineTo(0, st.size * 0.7);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+
+      // Desenho do Pássaro Vermelho Gorducho & Fofo (Piu-Piu)
       ctx.save();
       ctx.translate(birdX, birdY);
-      ctx.rotate(Math.min(Math.max(birdRef.current.vy * 0.07, -0.5), 0.7));
+      ctx.rotate(Math.min(Math.max(birdRef.current.vy * 0.07, -0.4), 0.6));
 
-      // Asas Brancas Animadas
+      // Asinhas Brancas Redondinhas
       ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#cbd5e1';
+      ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.ellipse(-7, Math.sin(birdRef.current.wingAngle) * 6, 13, 7, -0.2, 0, Math.PI * 2);
+      ctx.ellipse(-7, Math.sin(birdRef.current.wingAngle) * 6, 12, 8, -0.2, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Corpo Red Bird
+      // Corpo Redondo Fofo (Vermelho Cereja Vivo)
       ctx.fillStyle = '#ef4444';
-      ctx.strokeStyle = '#7f1d1d';
+      ctx.strokeStyle = '#991b1b';
       ctx.lineWidth = 3.5;
       ctx.beginPath();
       ctx.arc(0, 0, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Olho Cartoon
-      ctx.fillStyle = '#ffffff';
+      // Barriguinha Branca Fofinha
+      ctx.fillStyle = '#fee2e2';
       ctx.beginPath();
-      ctx.arc(8, -5, 6.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.arc(10, -5, 3, 0, Math.PI * 2);
-      ctx.fill();
-      // Brilho do olho
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(9, -7, 1.2, 0, Math.PI * 2);
+      ctx.arc(-2, 5, 11, 0.2, Math.PI - 0.2);
       ctx.fill();
 
-      // Bico Rosado
-      ctx.fillStyle = '#fb7185';
-      ctx.strokeStyle = '#9f1239';
+      // Bochecha Rosada Kawaii (Blush)
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.8)';
+      ctx.beginPath();
+      ctx.arc(2, 4, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Olhos Grandes e Fofos de Desenho Animado
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(8, -5, 7.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Pupila Brilhante
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(10, -5, 3.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dois Brilhos no Olhinho (Efeito Anime Fofo)
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(9, -7, 1.8, 0, Math.PI * 2);
+      ctx.arc(12, -4, 1.0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bico Fofo de Patinho/Passarinho (Laranja/Amarelo Doce)
+      ctx.fillStyle = '#f97316';
+      ctx.strokeStyle = '#c2410c';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.arc(15, 3, 6, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Crista Amarela
-      ctx.fillStyle = '#eab308';
-      ctx.strokeStyle = '#854d0e';
+      // Crista Amarela Fofa de Peninha
+      ctx.fillStyle = '#facc15';
+      ctx.strokeStyle = '#ca8a04';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(-6, -16);
+      ctx.moveTo(-5, -16);
       ctx.lineTo(2, -26);
-      ctx.lineTo(8, -16);
+      ctx.lineTo(7, -16);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
@@ -535,8 +821,8 @@ export default function App() {
       ctx.restore();
 
       if (hit) {
-        sfx.playCrash();
-        setHistory(prev => [{ mult: parseFloat(currentMult.toFixed(2)), crashed: true }, ...prev.slice(0, 9)]);
+        audio.playWompWomp();
+        setHistory(prev => [{ mult: parseFloat(currentMult.toFixed(2)), crashed: true }, ...prev.slice(0, 7)]);
         setGameState('CRASHED');
       } else {
         reqIdRef.current = requestAnimationFrame(loop);
@@ -551,70 +837,94 @@ export default function App() {
   const isPlaying = gameState === 'FLYING';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white font-sans flex flex-col items-center justify-start p-3 sm:p-5 select-none">
+    <div 
+      onClick={handleUserGestureAudio}
+      className="min-h-screen bg-gradient-to-b from-sky-300 via-sky-200 to-emerald-200 text-slate-800 font-fredoka flex flex-col items-center justify-start p-3 sm:p-5 select-none"
+    >
       
-      {/* Top Header com Marca e Saldo */}
-      <header className="w-full max-w-md flex justify-between items-center mb-3 bg-slate-900/90 backdrop-blur-md p-3.5 rounded-3xl border border-slate-800 shadow-xl shadow-black/40">
+      {/* Top Header Infantil: Cores Vivas, Nuvem e Balões */}
+      <header className="w-full max-w-md flex justify-between items-center mb-3 bg-white/95 backdrop-blur-md p-3.5 rounded-3xl border-4 border-amber-300 shadow-pop-amber">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg shadow-rose-950/50">
-            <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center border-2 border-white shadow-md animate-float-wiggle">
+            <span className="text-2xl">🐤</span>
           </div>
           <div>
-            <h1 className="text-lg font-black tracking-wider text-rose-500 flex items-center gap-1.5 leading-tight">
-              RED BIRD <span className="text-[10px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded-full border border-rose-500/30">CRASH</span>
+            <h1 className="text-xl font-cartoon tracking-wider text-rose-500 flex items-center gap-1 leading-none drop-shadow-sm">
+              PIU-PIU <span className="text-xs bg-amber-400 text-amber-950 px-2 py-0.5 rounded-full font-fredoka font-black border-2 border-amber-500">BETS</span>
             </h1>
-            <p className="text-[10px] font-bold text-amber-400 tracking-widest uppercase">GET MONEY BETS</p>
+            <p className="text-[11px] font-bold text-sky-600 tracking-wide">O PASSARINHO DO TESOURO 🎈</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Botão de Saldo / Depósito */}
+          {/* Botão de Moedinhas Mágicas */}
           <button 
             onClick={() => setShowDepositModal(true)}
-            className="group bg-slate-950/90 hover:bg-slate-800/90 px-3 py-1.5 rounded-2xl border border-emerald-500/40 hover:border-emerald-500 transition flex items-center gap-1.5 shadow-inner"
-            title="Recarregar Saldo Demo"
+            className="group btn-pop bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-2xl border-2 border-amber-400 flex items-center gap-1.5 shadow-sm"
+            title="Pegar mais Moedinhas Mágicas"
           >
-            <DollarSign className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition" />
-            <span className="font-mono font-bold text-emerald-400 text-sm">
+            <Coins className="w-4 h-4 text-amber-600 animate-spin" style={{ animationDuration: '6s' }} />
+            <span className="font-extrabold text-amber-700 text-sm">
               R$ {balance.toFixed(2)}
             </span>
-            <PlusCircle className="w-3.5 h-3.5 text-emerald-400/80 group-hover:text-emerald-300" />
+            <PlusCircle className="w-3.5 h-3.5 text-amber-600 group-hover:scale-125 transition-transform" />
           </button>
 
-          {/* Som */}
+          {/* Música Infantil On/Off */}
           <button 
-            onClick={toggleSound}
-            className="p-2.5 bg-slate-800/80 hover:bg-slate-700/80 rounded-2xl border border-slate-700/50 text-slate-300 transition"
-            title={soundMuted ? 'Ativar Som' : 'Mutar Som'}
+            onClick={toggleMusicButton}
+            className={`btn-pop p-2 rounded-2xl border-2 transition ${
+              musicActive 
+                ? 'bg-rose-400 text-white border-rose-500 shadow-sm' 
+                : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-400'
+            }`}
+            title={musicActive ? 'Pausar Musiquinha Infantil' : 'Tocar Musiquinha Infantil 🎵'}
           >
-            {soundMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+            <Music className="w-4 h-4" />
           </button>
 
-          {/* Painel Admin */}
+          {/* Efeitos Sonoros */}
+          <button 
+            onClick={toggleSfxButton}
+            className={`btn-pop p-2 rounded-2xl border-2 transition ${
+              sfxActive 
+                ? 'bg-emerald-400 text-emerald-950 border-emerald-500 shadow-sm' 
+                : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-400'
+            }`}
+            title={sfxActive ? 'Silenciar Efeitos' : 'Ativar Efeitos'}
+          >
+            {sfxActive ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
+
+          {/* Painel Secreto do Dono da Banca */}
           <button 
             onClick={() => setShowAdmin(!showAdmin)}
-            className={`p-2.5 rounded-2xl border transition ${showAdmin ? 'bg-rose-500 text-white border-rose-400' : 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700/50 text-slate-400 hover:text-white'}`}
-            title="Painel do Dono da Banca (Admin)"
+            className={`btn-pop p-2 rounded-2xl border-2 transition ${
+              showAdmin 
+                ? 'bg-purple-500 text-white border-purple-600' 
+                : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-500'
+            }`}
+            title="Painel Secreto da Fazenda"
           >
             <Settings className="w-4 h-4" />
           </button>
         </div>
       </header>
 
-      {/* Histórico de Rodadas (Badges estilo Aviator) */}
+      {/* Histórico Estilo Docinhos / Balões */}
       <div className="w-full max-w-md mb-2 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1 shrink-0 px-1">
-          <TrendingUp className="w-3 h-3" /> Histórico:
+        <span className="text-xs font-black text-sky-800 uppercase flex items-center gap-1 shrink-0 px-1">
+          <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" /> Histórico:
         </span>
         {history.map((h, i) => (
           <span 
             key={i} 
-            className={`text-xs font-mono font-extrabold px-2 py-0.5 rounded-lg border shrink-0 transition-transform ${
+            className={`text-xs font-black px-2.5 py-1 rounded-2xl border-2 shrink-0 shadow-sm ${
               h.mult >= 2.0
-                ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                ? 'bg-amber-300 text-amber-950 border-amber-400 animate-bounce'
                 : h.crashed 
-                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  ? 'bg-rose-200 text-rose-800 border-rose-300'
+                  : 'bg-emerald-200 text-emerald-900 border-emerald-300'
             }`}
           >
             {h.mult.toFixed(2)}x
@@ -622,46 +932,46 @@ export default function App() {
         ))}
       </div>
 
-      {/* Painel Admin Discreto */}
+      {/* Painel Admin Divertido */}
       {showAdmin && (
-        <div className="w-full max-w-md bg-slate-900/95 backdrop-blur-md p-4 rounded-3xl border border-rose-500/40 mb-3 text-xs space-y-3 shadow-2xl animate-in fade-in">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-            <span className="font-black text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldAlert className="w-4 h-4" /> Controle da Casa (Admin)
+        <div className="w-full max-w-md bg-white/95 backdrop-blur-md p-4 rounded-3xl border-4 border-purple-300 mb-3 text-xs space-y-3 shadow-pop-indigo animate-in fade-in">
+          <div className="flex justify-between items-center pb-2 border-b border-purple-100">
+            <span className="font-black text-purple-700 uppercase tracking-wider flex items-center gap-1.5 text-sm">
+              <ShieldAlert className="w-4 h-4 text-purple-600" /> Painel Secreto da Banca 🏰
             </span>
-            <span className="text-[10px] text-slate-400">Apenas você vê</span>
+            <span className="text-[10px] text-purple-400 font-bold">Modo Administrador</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-slate-300">
-            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 block">Total Apostado</span>
-              <span className="font-mono font-bold text-white text-sm">R$ {houseStats.totalBets.toFixed(2)}</span>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-purple-50 p-2.5 rounded-2xl border-2 border-purple-200">
+              <span className="text-[10px] text-purple-600 font-bold block">Moedas Apostadas</span>
+              <span className="font-extrabold text-purple-900 text-sm">R$ {houseStats.totalBets.toFixed(2)}</span>
             </div>
-            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 block">Lucro Líquido (GGR)</span>
-              <span className={`font-mono font-bold text-sm ${ggr >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <div className="bg-purple-50 p-2.5 rounded-2xl border-2 border-purple-200">
+              <span className="text-[10px] text-purple-600 font-bold block">Tesouro da Casa (GGR)</span>
+              <span className={`font-extrabold text-sm ${ggr >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 R$ {ggr.toFixed(2)}
               </span>
             </div>
           </div>
 
           <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1.5">
-              Rigor do Crash da Casa:
+            <label className="text-[10px] font-black text-purple-700 uppercase block mb-1.5">
+              Frequência de Queda do Pássaro:
             </label>
             <div className="grid grid-cols-3 gap-1.5">
               {[
-                { id: 'EASY', label: 'Suave (65% crash)', color: 'border-emerald-500/50' },
-                { id: 'NORMAL', label: 'Padrão (88% crash)', color: 'border-amber-500/50' },
-                { id: 'HARD', label: 'Triturador (95%)', color: 'border-rose-500/50' }
+                { id: 'EASY', label: 'Amigável (60%)', color: 'border-emerald-400' },
+                { id: 'NORMAL', label: 'Normal (86%)', color: 'border-amber-400' },
+                { id: 'HARD', label: 'Desafiador (94%)', color: 'border-rose-400' }
               ].map(opt => (
                 <button
                   key={opt.id}
                   onClick={() => setHouseRigor(opt.id)}
-                  className={`py-1.5 px-2 rounded-xl text-[10px] font-bold transition border ${
+                  className={`btn-pop py-2 px-2 rounded-2xl text-[10px] font-black border-2 transition ${
                     houseRigor === opt.id 
-                      ? 'bg-rose-500 text-white border-rose-400 shadow-md' 
-                      : 'bg-slate-800 text-slate-400 hover:text-white border-slate-700'
+                      ? 'bg-purple-500 text-white border-purple-600 shadow-sm' 
+                      : 'bg-purple-100 text-purple-700 border-purple-200'
                   }`}
                 >
                   {opt.label}
@@ -672,113 +982,116 @@ export default function App() {
         </div>
       )}
 
-      {/* Canvas / Arena do Jogo */}
+      {/* Arena do Jogo Estilo Desenho Animado */}
       <div 
         onClick={jump}
         onTouchStart={(e) => {
           e.preventDefault();
           jump();
         }}
-        className="relative w-full max-w-md h-[300px] rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl cursor-pointer select-none group"
+        className="relative w-full max-w-md h-[300px] rounded-3xl overflow-hidden border-4 border-amber-400 shadow-cartoon-lg cursor-pointer select-none group bg-sky-200"
       >
         <canvas ref={canvasRef} width={400} height={300} className="w-full h-full block" />
 
-        {/* Indicador de Toque / Tecla durante o voo */}
+        {/* Dica de Toque Infantil */}
         {isPlaying && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-950/60 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 pointer-events-none">
-            <span className="text-[11px] text-white/90 font-medium">
-              Toque ou <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] font-mono border border-slate-700">Espaço</kbd> para Bater Asas 🪽
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full border-2 border-amber-300 shadow-md pointer-events-none flex items-center gap-1.5">
+            <span className="text-xs text-amber-900 font-black">
+              Toque na tela ou aperte <kbd className="bg-amber-200 text-amber-950 px-1.5 py-0.5 rounded-lg border border-amber-400">Espaço</kbd> para Bater Asinhas! 🪽
             </span>
           </div>
         )}
 
-        {/* Multiplicador Dinâmico no Topo do Jogo */}
+        {/* Multiplicador Balão Gigante */}
         {isPlaying && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-950/85 backdrop-blur-md px-5 py-2 rounded-2xl border border-amber-500/40 shadow-xl flex items-center gap-2">
-            <Zap className="w-5 h-5 text-amber-400 animate-bounce" />
-            <span className="font-black text-3xl font-mono text-amber-300 drop-shadow-[0_2px_10px_rgba(251,191,36,0.5)]">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-amber-300 border-4 border-amber-500 px-5 py-1.5 rounded-3xl shadow-pop-amber flex items-center gap-2 animate-bounce">
+            <Sparkles className="w-5 h-5 text-amber-700 animate-spin" />
+            <span className="font-cartoon text-3xl text-amber-950 drop-shadow-sm">
               {multiplier.toFixed(2)}x
             </span>
           </div>
         )}
 
-        {/* Crash Overlay */}
+        {/* Crash Overlay - Infantil e Divertido */}
         {gameState === 'CRASHED' && (
-          <div className="absolute inset-0 bg-rose-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in zoom-in-95 duration-200">
-            <div className="bg-rose-500 text-white font-black text-[11px] px-3.5 py-1 rounded-full mb-2 uppercase tracking-widest shadow-lg shadow-rose-950">
-              O Pássaro Bateu! 💥
+          <div className="absolute inset-0 bg-rose-500/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in zoom-in-95 duration-200">
+            <div className="text-5xl mb-2 animate-bounce">🙈💫</div>
+            <div className="bg-yellow-300 text-amber-950 font-black text-xs px-4 py-1.5 rounded-full mb-2 uppercase tracking-widest border-2 border-yellow-400 shadow-md">
+              Bateu o Biquinho!
             </div>
-            <h2 className="text-4xl font-black text-white mb-1 tracking-tight">CRASHOU!</h2>
-            <p className="text-slate-300 text-sm mb-4">
-              Multiplicador final: <span className="font-mono text-amber-400 font-extrabold text-base">{multiplier.toFixed(2)}x</span>
+            <h2 className="text-3xl font-cartoon text-white mb-1 drop-shadow-md">OPS! CAIU!</h2>
+            <p className="text-rose-100 text-sm font-bold mb-4">
+              Multiplicador: <span className="bg-white/30 px-2 py-0.5 rounded-lg text-white font-black">{multiplier.toFixed(2)}x</span>
             </p>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setGameState('IDLE');
               }}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-5 py-2.5 rounded-2xl text-xs font-bold text-white transition flex items-center gap-2"
+              className="btn-pop bg-yellow-400 hover:bg-yellow-300 text-amber-950 font-black px-6 py-3 rounded-2xl text-sm border-2 border-yellow-500 shadow-pop-amber transition flex items-center gap-2"
             >
-              <RotateCcw className="w-4 h-4" /> Jogar Novamente
+              <RotateCcw className="w-5 h-5" /> Tentar de Novo!
             </button>
           </div>
         )}
 
-        {/* Cash Out Overlay */}
+        {/* Cash Out Overlay - Festa de Doces */}
         {gameState === 'CASHOUT' && (
-          <div className="absolute inset-0 bg-emerald-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center mb-3">
-              <Award className="w-10 h-10 text-emerald-400 animate-bounce" />
+          <div className="absolute inset-0 bg-emerald-500/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in zoom-in-95 duration-200">
+            <div className="text-6xl mb-1 animate-bounce">🎉🍬</div>
+            <h2 className="text-3xl font-cartoon text-amber-300 mb-1 drop-shadow-md">
+              EBAAA! GANHOU!
+            </h2>
+            <p className="text-emerald-100 text-sm font-bold mb-1">
+              Multiplicador: <span className="font-black text-white">{multiplier.toFixed(2)}x</span>
+            </p>
+            <div className="bg-white/95 px-5 py-2.5 rounded-2xl border-2 border-emerald-300 shadow-lg mb-4">
+              <span className="text-xs text-emerald-800 font-bold block">Você Faturou:</span>
+              <span className="font-cartoon text-2xl text-emerald-600">R$ {winAmount.toFixed(2)}</span>
             </div>
-            <h2 className="text-3xl font-black text-emerald-400 mb-1 tracking-tight">CASH OUT COM SUCESSO!</h2>
-            <p className="text-slate-200 text-base mb-1">
-              Multiplicador: <span className="font-mono font-bold text-amber-300">{multiplier.toFixed(2)}x</span>
-            </p>
-            <p className="text-xl font-black text-white mb-4">
-              Você Ganhou: <span className="font-mono text-emerald-400">R$ {winAmount.toFixed(2)}</span>
-            </p>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setGameState('IDLE');
               }}
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-2.5 rounded-2xl text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-950/50"
+              className="btn-pop bg-amber-400 hover:bg-amber-300 text-amber-950 font-black px-7 py-3 rounded-2xl text-sm border-2 border-amber-500 shadow-pop-amber uppercase tracking-wider transition"
             >
-              Continuar Faturando
+              Pegar Mais Docinhos!
             </button>
           </div>
         )}
 
-        {/* Tela Inicial / Espera */}
+        {/* Tela Inicial */}
         {gameState === 'IDLE' && (
-          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center">
-            <div className="bg-slate-900/90 border border-slate-700/80 px-5 py-3 rounded-2xl shadow-xl flex flex-col items-center gap-1.5">
-              <p className="text-white font-extrabold text-sm">
-                Defina o valor e clique em <span className="text-emerald-400">APOSTAR</span>
+          <div className="absolute inset-0 bg-sky-900/30 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center">
+            <div className="bg-white/95 border-4 border-amber-300 px-6 py-4 rounded-3xl shadow-pop-amber flex flex-col items-center gap-2">
+              <span className="text-3xl animate-bounce">🎈🐤✨</span>
+              <p className="text-slate-800 font-black text-sm">
+                Escolha suas moedinhas e clique em <span className="text-emerald-600">DECOLAR</span>!
               </p>
-              <p className="text-[11px] text-slate-400">
-                Pule os canos e dê Cash Out antes que ele colida!
+              <p className="text-xs text-slate-500 font-medium">
+                Pule os tubinhos de pirulito e resgate seus docinhos a tempo!
               </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Controles de Aposta e Painel Principal */}
-      <div className="w-full max-w-md bg-slate-900/90 backdrop-blur-md p-4 rounded-3xl border border-slate-800 shadow-xl mt-3 space-y-3.5">
+      {/* Painel de Apostas 3D Estilo Brinquedo */}
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-md p-4 rounded-3xl border-4 border-sky-300 shadow-cartoon-lg mt-3 space-y-3.5">
         
-        {/* Input de Valor + Botões Rápidos */}
+        {/* Controle da Aposta */}
         <div>
           <div className="flex justify-between items-center mb-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Valor da Aposta (R$)
+            <label className="text-xs font-black text-sky-800 uppercase tracking-wider flex items-center gap-1">
+              <Coins className="w-4 h-4 text-amber-500" /> Moedas da Aposta:
             </label>
-            <span className="text-[10px] text-slate-500 font-mono">Mín: R$ 1,00</span>
+            <span className="text-xs text-sky-600 font-bold">Mínimo: R$ 1,00</span>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">R$</span>
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-600 font-black text-sm">R$</span>
               <input 
                 type="number"
                 step="any"
@@ -786,56 +1099,56 @@ export default function App() {
                 value={bet}
                 disabled={isPlaying}
                 onChange={(e) => setBet(Math.max(1, parseFloat(e.target.value) || 0))}
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-9 pr-3 py-2.5 font-mono font-bold text-emerald-400 text-lg focus:outline-none focus:border-emerald-500 disabled:opacity-50"
+                className="w-full bg-sky-50 border-2 border-sky-300 rounded-2xl pl-10 pr-3 py-2.5 font-fredoka font-black text-sky-900 text-lg focus:outline-none focus:border-sky-500 disabled:opacity-50"
               />
             </div>
 
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               <button
                 disabled={isPlaying}
                 onClick={() => setBet(prev => Math.max(1, parseFloat((prev / 2).toFixed(2))))}
-                className="bg-slate-800 hover:bg-slate-700 px-2.5 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-50 text-slate-300"
+                className="btn-pop bg-sky-100 hover:bg-sky-200 border-2 border-sky-300 px-3 py-2.5 rounded-2xl text-xs font-black transition disabled:opacity-50 text-sky-800"
               >
                 ½
               </button>
               <button
                 disabled={isPlaying}
                 onClick={() => setBet(prev => parseFloat((prev * 2).toFixed(2)))}
-                className="bg-slate-800 hover:bg-slate-700 px-2.5 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-50 text-slate-300"
+                className="btn-pop bg-sky-100 hover:bg-sky-200 border-2 border-sky-300 px-3 py-2.5 rounded-2xl text-xs font-black transition disabled:opacity-50 text-sky-800"
               >
                 2x
               </button>
               <button
                 disabled={isPlaying}
                 onClick={() => setBet(Math.floor(balance))}
-                className="bg-slate-800 hover:bg-slate-700 px-2.5 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-50 text-slate-300"
+                className="btn-pop bg-sky-200 hover:bg-sky-300 border-2 border-sky-400 px-3 py-2.5 rounded-2xl text-xs font-black transition disabled:opacity-50 text-sky-900"
               >
-                Max
+                Tudo!
               </button>
             </div>
           </div>
 
-          {/* Atalhos de Valores Prontos */}
+          {/* Botões Rápidos Doces */}
           <div className="grid grid-cols-4 gap-1.5 mt-2">
             {[5, 10, 20, 50].map((val) => (
               <button
                 key={val}
                 disabled={isPlaying}
                 onClick={() => setBet(val)}
-                className={`py-1.5 rounded-xl text-xs font-bold transition disabled:opacity-50 border ${
+                className={`btn-pop py-2 rounded-2xl text-xs font-black transition disabled:opacity-50 border-2 ${
                   bet === val 
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
-                    : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 border-slate-800'
+                    ? 'bg-amber-400 text-amber-950 border-amber-500 shadow-sm' 
+                    : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
                 }`}
               >
-                +{val}
+                +{val} Moedas
               </button>
             ))}
           </div>
         </div>
 
-        {/* Auto Cash Out (Opcional) */}
-        <div className="bg-slate-950/70 p-2.5 rounded-2xl border border-slate-800 flex items-center justify-between gap-3 text-xs">
+        {/* Resgate Automático Fofo (Auto Cash Out) */}
+        <div className="bg-sky-50 p-2.5 rounded-2xl border-2 border-sky-200 flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
             <input 
               type="checkbox"
@@ -843,10 +1156,10 @@ export default function App() {
               checked={enableAutoCashout}
               disabled={isPlaying}
               onChange={(e) => setEnableAutoCashout(e.target.checked)}
-              className="w-4 h-4 rounded text-emerald-500 focus:ring-0 bg-slate-900 border-slate-700 cursor-pointer"
+              className="w-4 h-4 rounded text-emerald-500 focus:ring-0 bg-white border-2 border-sky-300 cursor-pointer"
             />
-            <label htmlFor="autocash" className="text-slate-300 font-bold text-xs cursor-pointer">
-              Auto Cash Out:
+            <label htmlFor="autocash" className="text-sky-900 font-black text-xs cursor-pointer flex items-center gap-1">
+              Resgate Automático:
             </label>
           </div>
 
@@ -858,53 +1171,53 @@ export default function App() {
               value={autoCashout}
               disabled={!enableAutoCashout || isPlaying}
               onChange={(e) => setAutoCashout(Math.max(1.1, parseFloat(e.target.value) || 1.1))}
-              className="w-20 bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-center font-mono font-bold text-amber-400 disabled:opacity-40"
+              className="w-20 bg-white border-2 border-sky-300 rounded-xl px-2 py-1 text-center font-fredoka font-black text-sky-900 disabled:opacity-40"
             />
-            <span className="text-slate-400 font-mono font-bold">x</span>
+            <span className="text-sky-700 font-black">x</span>
           </div>
         </div>
 
-        {/* Botão de Ação Gigante (Apostar / Cashout) */}
+        {/* Botão de Decolar / Resgatar 3D Pop Gigante */}
         {!isPlaying ? (
           <button
             onClick={startRound}
-            className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black py-4 rounded-2xl text-lg shadow-xl shadow-emerald-950/60 transition active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider"
+            className="w-full btn-pop bg-emerald-400 hover:bg-emerald-300 active:bg-emerald-500 text-emerald-950 font-cartoon text-xl py-4 rounded-3xl border-4 border-emerald-600 shadow-pop-emerald flex items-center justify-center gap-2 uppercase tracking-wider"
           >
-            <Play className="w-6 h-6 fill-current" /> Apostar & Decolar
+            <Play className="w-6 h-6 fill-current" /> DECOLAR PIU-PIU! 🚀
           </button>
         ) : (
           <button
             onClick={cashOut}
-            className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black py-4 rounded-2xl text-lg shadow-xl shadow-amber-950/60 transition active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider animate-pulse"
+            className="w-full btn-pop bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-amber-950 font-cartoon text-xl py-4 rounded-3xl border-4 border-amber-600 shadow-pop-amber flex items-center justify-center gap-2 uppercase tracking-wider animate-pulse"
           >
-            <Award className="w-6 h-6" /> Cash Out R$ {(bet * multiplier).toFixed(2)}
+            <Award className="w-6 h-6" /> RESGATAR R$ {(bet * multiplier).toFixed(2)} ✨
           </button>
         )}
       </div>
 
-      {/* Apostadores ao Vivo (Simulação Multiplayer) */}
-      <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-sm p-3.5 rounded-3xl border border-slate-800 mt-3">
-        <div className="flex justify-between items-center mb-2.5 px-1">
-          <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
-            <Users className="w-4 h-4 text-emerald-400" /> Apostas na Rodada
+      {/* Amiguinhos da Rodada (Simulação Ao Vivo Infantil) */}
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-sm p-3.5 rounded-3xl border-4 border-emerald-300 shadow-cartoon mt-3">
+        <div className="flex justify-between items-center mb-2 px-1">
+          <span className="text-xs font-black text-emerald-900 flex items-center gap-1.5 uppercase tracking-wider">
+            <Users className="w-4 h-4 text-emerald-600" /> Amiguinhos Jogando Juntos
           </span>
-          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Ao Vivo
+          <span className="text-[11px] bg-emerald-100 text-emerald-800 font-black px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Na Fazendinha
           </span>
         </div>
 
         <div className="space-y-1.5">
           {livePlayers.map((p, idx) => (
-            <div key={idx} className="flex justify-between items-center bg-slate-950/60 px-3 py-1.5 rounded-xl text-xs border border-slate-800/80">
-              <span className="font-medium text-slate-300">{p.name}</span>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-slate-400">R$ {p.bet.toFixed(2)}</span>
+            <div key={idx} className="flex justify-between items-center bg-emerald-50/70 px-3 py-1.5 rounded-2xl text-xs border border-emerald-200">
+              <span className="font-bold text-emerald-950">{p.name}</span>
+              <div className="flex items-center gap-2.5">
+                <span className="font-extrabold text-slate-500">R$ {p.bet.toFixed(2)}</span>
                 {p.cashedOut ? (
-                  <span className="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 text-[11px]">
+                  <span className="font-black text-emerald-700 bg-emerald-200 px-2 py-0.5 rounded-xl border border-emerald-300 text-[11px]">
                     +{p.mult.toFixed(2)}x (R$ {p.win.toFixed(2)})
                   </span>
                 ) : (
-                  <span className="text-slate-500 text-[11px]">No jogo...</span>
+                  <span className="text-amber-700 font-bold text-[11px] animate-pulse">Voando... 🪽</span>
                 )}
               </div>
             </div>
@@ -912,24 +1225,24 @@ export default function App() {
         </div>
       </div>
 
-      {/* Modal de Depósito Fictício / Recarga de Saldo */}
+      {/* Modal Fofo de Moedinhas Mágicas */}
       {showDepositModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-amber-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-4 animate-in zoom-in-95">
             <div className="flex justify-between items-center">
-              <h3 className="font-black text-lg text-emerald-400 flex items-center gap-2">
-                <PlusCircle className="w-5 h-5" /> Adicionar Saldo Demo
+              <h3 className="font-cartoon text-xl text-amber-600 flex items-center gap-2">
+                <Coins className="w-6 h-6 text-amber-500" /> Mais Moedinhas!
               </h3>
               <button 
                 onClick={() => setShowDepositModal(false)}
-                className="text-slate-400 hover:text-white text-sm font-bold p-1"
+                className="btn-pop bg-rose-100 hover:bg-rose-200 text-rose-700 w-8 h-8 rounded-full border border-rose-300 font-black flex items-center justify-center"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-slate-300">
-              Escolha um valor para recarregar sua carteira e continuar testando o jogo:
+            <p className="text-xs text-slate-600 font-bold">
+              Pegue mais moedinhas mágicas para continuar brincando com o Piu-Piu:
             </p>
 
             <div className="grid grid-cols-3 gap-2">
@@ -937,10 +1250,11 @@ export default function App() {
                 <button
                   key={val}
                   onClick={() => {
+                    audio.playCoin();
                     setBalance(prev => prev + val);
                     setShowDepositModal(false);
                   }}
-                  className="bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 hover:border-emerald-500 py-3 rounded-2xl font-mono font-bold text-emerald-400 hover:text-white transition text-sm"
+                  className="btn-pop bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 py-3 rounded-2xl font-black text-amber-800 transition text-sm shadow-sm"
                 >
                   +R$ {val}
                 </button>
@@ -949,20 +1263,21 @@ export default function App() {
 
             <button
               onClick={() => {
+                audio.playCoin();
                 setBalance(1000);
                 setShowDepositModal(false);
               }}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-2.5 rounded-xl border border-slate-700 transition"
+              className="w-full btn-pop bg-sky-100 hover:bg-sky-200 text-sky-800 text-xs font-black py-2.5 rounded-2xl border-2 border-sky-300 transition"
             >
-              Resetar para R$ 1.000,00
+              Recarregar R$ 1.000,00 Padrão
             </button>
           </div>
         </div>
       )}
 
-      {/* Footer com instruções */}
-      <footer className="mt-5 text-[11px] text-slate-500 text-center">
-        Pressione <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-400 border border-slate-700">Espaço</kbd> para Voar • <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-400 border border-slate-700">Enter</kbd> para Ação
+      {/* Rodapé Fofinho */}
+      <footer className="mt-4 text-xs text-sky-900 font-bold text-center">
+        Dica: Aperte <kbd className="bg-white px-2 py-0.5 rounded-xl text-sky-950 border-2 border-sky-300 shadow-sm">Espaço</kbd> para Voar • <kbd className="bg-white px-2 py-0.5 rounded-xl text-sky-950 border-2 border-sky-300 shadow-sm">Enter</kbd> para Resgatar
       </footer>
     </div>
   );
