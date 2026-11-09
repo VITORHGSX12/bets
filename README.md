@@ -1,48 +1,40 @@
-# 🐤 PIU-PIU BETS - O Joguinho do Passarinho Valioso
+# 🐤 RED BIRD GET MONEY - Jogo de Apostas Crash
 
-Plataforma completa de apostas no formato **Crash/Multiplayer Síncrono** com tema infantil de desenho animado, física de voo inspirada em *Flappy Bird*, sistema de **dupla aposta independente (estilo Aviator/Spaceman)**, verificação criptográfica **Provably Fair**, carteira integrada com **Depósito e Saque Pix simulados** e **Chat Social ao Vivo**.
+Plataforma completa de apostas no formato **Crash/Multiplayer Síncrono** com tema cartoon, física de voo inspirada em *Flappy Bird*, sistema de **dupla aposta independente (estilo Aviator/Spaceman)**, verificação criptográfica **Provably Fair**, carteira integrada com **Depósito e Saque Pix**, regras de bônus e **Chat Social ao Vivo**.
 
 ---
 
-## 📋 Auditoria de Funcionalidades do Jogo de Apostas
+## 🌐 Link Oficial em Produção 24/7 (Vercel Oficial)
+👉 **[https://bets-henna.vercel.app](https://bets-henna.vercel.app)**
+
+- **100% Online 24/7** em servidores globais da Vercel
+- **Zero telas de bloqueio**, zero senhas ou confirmações de IP
+- Conexão direta instantânea em qualquer celular ou computador no mundo
+
+---
+
+## 📋 Funcionalidades Implementadas
 
 | Funcionalidade | Status | Descrição |
 | :--- | :---: | :--- |
-| **Ciclo Contínuo de Rodadas** | ✅ 100% | Contagem regressiva (5s para apostar) + Decolagem/Voo + Crash + Intervalo de 3.5s |
-| **Painel de Dupla Aposta** | ✅ 100% | 2 painéis independentes (Aposta 1 e Aposta 2) com controles de ½, 2x e Auto Bet |
-| **Auto Cash Out Independente** | ✅ 100% | Saque automático programado por multiplicador em cada painel (ex: 1.50x e 5.00x) |
-| **Sistema Provably Fair** | ✅ 100% | Hash SHA-256 gerado previamente para garantir integridade e transparência da rodada |
-| **Depósito Pix Instantâneo** | ✅ 100% | Modal com QR Code simulado e chave Pix fictícia gerando saldo imediato |
-| **Saque Pix Instantâneo** | ✅ 100% | Transferência simulada para chave Pix (CPF/E-mail) com comprovante de recibo |
-| **Apostadores ao Vivo (Social)** | ✅ 100% | Feed dinâmico de amiguinhos apostando e sacando na mesma rodada com você |
-| **Chat da Comunidade** | ✅ 100% | Aba com bate-papo em tempo real com envio e recepção de mensagens |
-| **Histórico Pessoal** | ✅ 100% | Lista de apostas recentes com cálculo automático de lucros e prejuízos |
-| **Maiores Ganhos (Top Winners)**| ✅ 100% | Tabela de classificação com troféus para os maiores multiplicadores do dia |
-| **Áudio Sintetizado Nativo** | ✅ 100% | Web Audio API: Música infantil em loop, som de mola, trompete triste e fanfarra |
-| **Painel do Dono da Banca** | ✅ 100% | Acesso Admin com cálculo de GGR e controle do rigor de crash da casa |
+| **Acesso Direto sem Bloqueio** | ✅ 100% | Hospedagem de nível empresarial na Vercel (CDN global) |
+| **Cadastro de Jogador** | ✅ 100% | Nome Completo, Celular/WhatsApp e Chave Pix cadastrada |
+| **Chave Pix Oficial da Banca** | ✅ 100% | Chave do Dono: `99985280205` configurada nos depósitos |
+| **Bônus de Depósito** | ✅ 100% | Depósito mínimo de R$ 20 ganha +R$ 120 de Bônus em conta |
+| **Convide e Ganhe** | ✅ 100% | +R$ 20 de bônus por amigo cadastrado |
+| **Critérios de Saque** | ✅ 100% | Exige pelo menos 1 depósito de R$ 20 para liberar o saque |
+| **Separação de Carteiras** | ✅ 100% | Saldo Real Sacável vs Saldo Bônus (apenas jogo) |
+| **Painel Admin Oculto** | ✅ 100% | 100% invisível para jogadores. Acesso via 5 cliques no logo + senha `985280205` |
+| **Ciclo Síncrono de Rodadas** | ✅ 100% | 5s de contagem regressiva + Voo + Crash + Intervalo |
+| **Duplo Painel de Aposta** | ✅ 100% | 2 apostas simultâneas independentes com Auto Cash Out |
+| **Provably Fair** | ✅ 100% | Hash SHA-256 gerado antes da decolagem |
+| **Áudio Sintetizado** | ✅ 100% | Web Audio API: Música infantil, mola cartoon, trompete triste |
 
 ---
 
-## 🎮 Controles e Atalhos
+## 🕹️ Controles
 
-- **Toque ou Espaço**: Bater as asas do Piu-Piu durante o voo
-- **Tecla Z**: Sacar / Cash Out da **Aposta 1**
-- **Tecla X**: Sacar / Cash Out da **Aposta 2**
-
----
-
-## 🚀 Como Rodar Localmente
-
-```bash
-# 1. Instalar pacotes
-npm install
-
-# 2. Iniciar servidor
-npm run dev
-
-# 3. Compilar para produção
-npm run build
-
-# 4. Pré-visualizar versão final
-npm run preview
-```
+- **Toque ou Espaço**: Bater asas durante o voo
+- **Tecla Z**: Sacar Aposta 1
+- **Tecla X**: Sacar Aposta 2
+- **Acesso Dono da Banca**: 5 cliques rápidos no passarinho `🐤` do logo ➔ Senha: `985280205`
