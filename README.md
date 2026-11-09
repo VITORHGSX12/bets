@@ -1,66 +1,48 @@
-# 🐦 RED BIRD - O Jogo do Pássaro Valioso (Crash Bets)
+# 🐤 PIU-PIU BETS - O Joguinho do Passarinho Valioso
 
-Um jogo de apostas e crash dinâmico em tempo real inspirado em mecânicas clássicas de *Flappy Bird* com apostas multiplicadoras (*Crash/Aviator/JetX*).
-
----
-
-## 🎮 Como Funciona o Jogo
-
-1. **Defina a Aposta**: Escolha o valor da aposta (R$ 5, R$ 10, R$ 50 ou digite qualquer valor a partir de R$ 1,00). Use os atalhos `½`, `2x` e `Max`.
-2. **Apostar & Decolar**: Clique para iniciar a rodada.
-3. **Controle de Voo**:
-   - Toque na tela, clique no canvas ou aperte <kbd>Espaço</kbd> para bater as asas e desviar dos canos!
-4. **Multiplicador Progressivo**: O multiplicador sobe em tempo real enquanto o pássaro estiver voando.
-5. **Cash Out**: Saque seus lucros a qualquer momento antes que ele colida!
-6. **Auto Cash Out**: Configure um multiplicador automático para sacar sem risco de distração.
+Plataforma completa de apostas no formato **Crash/Multiplayer Síncrono** com tema infantil de desenho animado, física de voo inspirada em *Flappy Bird*, sistema de **dupla aposta independente (estilo Aviator/Spaceman)**, verificação criptográfica **Provably Fair**, carteira integrada com **Depósito e Saque Pix simulados** e **Chat Social ao Vivo**.
 
 ---
 
-## ✨ Recursos Implementados
+## 📋 Auditoria de Funcionalidades do Jogo de Apostas
 
-- 🔊 **Efeitos Sonoros Sintetizados**: Sons de flap (asas), cash out (vitória), crash e clique usando Web Audio API nativa.
-- 👥 **Apostas ao Vivo**: Simulação de apostadores simultâneos na mesma rodada.
-- 📈 **Histórico de Rodadas**: Badges com os multiplicadores das últimas partidas.
-- 💳 **Recarga Fictícia / Pix Demo**: Modal para repor créditos quando quiser.
-- ⚙️ **Painel Administrativo do Dono da Banca**:
-  - GGR (Lucro líquido da casa em tempo real).
-  - Controle de rigor do crash: *Suave (65%)*, *Padrão (88%)*, *Triturador (95%)*.
-- 💾 **Persistência de Saldo**: Saldo e lucros salvos automaticamente no `localStorage`.
+| Funcionalidade | Status | Descrição |
+| :--- | :---: | :--- |
+| **Ciclo Contínuo de Rodadas** | ✅ 100% | Contagem regressiva (5s para apostar) + Decolagem/Voo + Crash + Intervalo de 3.5s |
+| **Painel de Dupla Aposta** | ✅ 100% | 2 painéis independentes (Aposta 1 e Aposta 2) com controles de ½, 2x e Auto Bet |
+| **Auto Cash Out Independente** | ✅ 100% | Saque automático programado por multiplicador em cada painel (ex: 1.50x e 5.00x) |
+| **Sistema Provably Fair** | ✅ 100% | Hash SHA-256 gerado previamente para garantir integridade e transparência da rodada |
+| **Depósito Pix Instantâneo** | ✅ 100% | Modal com QR Code simulado e chave Pix fictícia gerando saldo imediato |
+| **Saque Pix Instantâneo** | ✅ 100% | Transferência simulada para chave Pix (CPF/E-mail) com comprovante de recibo |
+| **Apostadores ao Vivo (Social)** | ✅ 100% | Feed dinâmico de amiguinhos apostando e sacando na mesma rodada com você |
+| **Chat da Comunidade** | ✅ 100% | Aba com bate-papo em tempo real com envio e recepção de mensagens |
+| **Histórico Pessoal** | ✅ 100% | Lista de apostas recentes com cálculo automático de lucros e prejuízos |
+| **Maiores Ganhos (Top Winners)**| ✅ 100% | Tabela de classificação com troféus para os maiores multiplicadores do dia |
+| **Áudio Sintetizado Nativo** | ✅ 100% | Web Audio API: Música infantil em loop, som de mola, trompete triste e fanfarra |
+| **Painel do Dono da Banca** | ✅ 100% | Acesso Admin com cálculo de GGR e controle do rigor de crash da casa |
+
+---
+
+## 🎮 Controles e Atalhos
+
+- **Toque ou Espaço**: Bater as asas do Piu-Piu durante o voo
+- **Tecla Z**: Sacar / Cash Out da **Aposta 1**
+- **Tecla X**: Sacar / Cash Out da **Aposta 2**
 
 ---
 
 ## 🚀 Como Rodar Localmente
 
 ```bash
-# 1. Instalar dependências
+# 1. Instalar pacotes
 npm install
 
-# 2. Iniciar servidor de desenvolvimento
+# 2. Iniciar servidor
 npm run dev
 
-# 3. Gerar build de produção
+# 3. Compilar para produção
 npm run build
 
-# 4. Pré-visualizar build
+# 4. Pré-visualizar versão final
 npm run preview
 ```
-
----
-
-## 📤 Como Subir para o seu GitHub
-
-```bash
-# Adicionar todos os arquivos
-git add .
-
-# Criar o primeiro commit
-git commit -m "feat: Jogo Red Bird Crash completo e operacional"
-
-# Vincular ao seu repositório remoto (substitua com a URL do seu GitHub)
-git remote add origin https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
-
-# Enviar para o GitHub
-git branch -M main
-git push -u origin main
-```
-
