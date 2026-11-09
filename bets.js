@@ -766,9 +766,11 @@ export default function App() {
     multRef.current = 1.00;
 
     birdRef.current = { y: 130, vy: -1.5, wingFrame: 0, wingTimer: 0, angle: 0 };
+    // Primeiro e segundo obstáculo mais perto para o jogador sentir o avanço imediato
     pipesRef.current = [
-      { x: 340, top: 85, bottom: 95 },
-      { x: 530, top: 115, bottom: 65 }
+      { x: 190, top: 80, bottom: 100, passed: false },
+      { x: 320, top: 110, bottom: 70, passed: false },
+      { x: 460, top: 75, bottom: 105, passed: false }
     ];
 
     setLivePlayers([
@@ -986,12 +988,19 @@ export default function App() {
         // Scroll do Chão e Canos
         groundOffsetRef.current = (groundOffsetRef.current + 2.5) % 24;
 
-        pipesRef.current.forEach(p => { p.x -= 2.5; });
+        pipesRef.current.forEach(p => { 
+          p.x -= 2.5; 
+          // Feedback de conquista ao ultrapassar o obstáculo
+          if (!p.passed && p.x + 52 < 75) {
+            p.passed = true;
+            audio.playCoin();
+          }
+        });
         if (pipesRef.current.length && pipesRef.current[0].x < -60) {
           pipesRef.current.shift();
           const lastX = pipesRef.current[pipesRef.current.length - 1]?.x || 300;
           const topH = Math.floor(Math.random() * 80) + 50;
-          pipesRef.current.push({ x: lastX + 175, top: topH, bottom: 250 - topH - 95 });
+          pipesRef.current.push({ x: lastX + 140, top: topH, bottom: 250 - topH - 95, passed: false });
         }
       } else if (roundPhase === 'WAITING') {
         // Flutuação suave esperando a decolagem
