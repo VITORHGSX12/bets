@@ -750,7 +750,7 @@ export default function App() {
     let maxMult = 1.00;
 
     const threshold1 = houseRigor === 'EASY' ? 0.60 : houseRigor === 'HARD' ? 0.94 : 0.75;
-    const threshold2 = houseRigor === 'EASY' ? 0.85 : houseRigor === 'HARD' ? 0.98 : 0.90;
+    const threshold2 = houseRigor === 'EASY' ? 0.85 : houseRigor === 'HARD' ? 0.98 : 0.95;
 
     if (rand < threshold1) {
       maxMult = parseFloat((Math.random() * 0.28 + 1.02).toFixed(2));
