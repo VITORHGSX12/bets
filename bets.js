@@ -18,18 +18,23 @@ import {
   Trophy, 
   CheckCircle2, 
   Lock, 
-  Send,
-  Zap,
-  Star,
-  User,
-  Phone,
-  Key,
-  LogOut,
-  AlertTriangle,
-  CreditCard,
-  Copy,
-  ExternalLink
+  Send, 
+  Zap, 
+  Star, 
+  User, 
+  Phone, 
+  Key, 
+  LogOut, 
+  AlertTriangle, 
+  Copy, 
+  Gift, 
+  Share2, 
+  Target,
+  QrCode
 } from 'lucide-react';
+
+// CHAVE PIX OFICIAL DO DONO DA BANCA
+const OWNER_PIX_KEY = '99985280205';
 
 // --- MOTOR DE ÁUDIO SINTETIZADO INFANTIL (Web Audio API) ---
 class CartoonAudioEngine {
@@ -265,7 +270,7 @@ const audio = new CartoonAudioEngine();
 
 const generateRoundHash = () => {
   const chars = 'abcdef0123456789';
-  let hash = 'piupiu_';
+  let hash = 'redbird_';
   for (let i = 0; i < 28; i++) {
     hash += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -273,23 +278,47 @@ const generateRoundHash = () => {
 };
 
 export default function App() {
-  // --- SISTEMA DE CADASTRO DO JOGADOR ---
+  // --- PERFIL DO JOGADOR ---
   const [userProfile, setUserProfile] = useState(() => {
-    const saved = localStorage.getItem('piupiu_user_profile');
+    const saved = localStorage.getItem('redbird_user_profile');
     return saved ? JSON.parse(saved) : null;
   });
 
   const [registerName, setRegisterName] = useState('');
   const [registerPhone, setRegisterPhone] = useState('');
   const [registerPixKey, setRegisterPixKey] = useState('');
-  const [registerPixType, setRegisterPixType] = useState('CPF'); // CPF, Telefone, E-mail, Aleatória
+  const [registerPixType, setRegisterPixType] = useState('Celular');
   const [registerError, setRegisterError] = useState('');
 
-  // --- CARTEIRA E SALDO ---
-  const [balance, setBalance] = useState(() => {
-    const saved = localStorage.getItem('piupiu_balance_v4');
-    return saved ? parseFloat(saved) : 50.00; // Começa com R$ 50 de bônus de boas-vindas
+  // --- CARTEIRA SEPARADA (SALDO REAL SACÁVEL VS SALDO BÔNUS) ---
+  const [realBalance, setRealBalance] = useState(() => {
+    const saved = localStorage.getItem('redbird_real_balance');
+    return saved ? parseFloat(saved) : 0.00; // Saldo real sacável vem de depósitos e lucros
   });
+
+  const [bonusBalance, setBonusBalance] = useState(() => {
+    const saved = localStorage.getItem('redbird_bonus_balance');
+    return saved ? parseFloat(saved) : 0.00; // Bônus não pode ser sacado, apenas jogado
+  });
+
+  // CRITÉRIO DE SAQUE / METAS:
+  const [hasDeposited, setHasDeposited] = useState(() => {
+    const saved = localStorage.getItem('redbird_has_deposited');
+    return saved === 'true';
+  });
+
+  const [totalDeposited, setTotalDeposited] = useState(() => {
+    const saved = localStorage.getItem('redbird_total_deposited');
+    return saved ? parseFloat(saved) : 0.00;
+  });
+
+  const [friendsInvited, setFriendsInvited] = useState(() => {
+    const saved = localStorage.getItem('redbird_friends_invited');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  // Saldo Total Disponível para Apostar (Real + Bônus)
+  const totalBalance = realBalance + bonusBalance;
 
   // --- CONTROLE DE RODADA GLOBAL ---
   const [roundPhase, setRoundPhase] = useState('WAITING');
@@ -316,17 +345,18 @@ export default function App() {
   const [enableAutoCashout2, setEnableAutoCashout2] = useState(false);
   const [autoBet2, setAutoBet2] = useState(false);
 
-  // --- ÁUDIO E MODAIS ---
+  // --- MODAIS E TELAS ---
   const [musicActive, setMusicActive] = useState(false);
   const [sfxActive, setSfxActive] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [showGatewayInfoModal, setShowGatewayInfoModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [activeTab, setActiveTab] = useState('live');
 
-  // --- HISTÓRICO DE MULTIPLICADORES DA BANCA ---
+  // Histórico
   const [history, setHistory] = useState([
     { mult: 1.25, crashed: true },
     { mult: 2.10, crashed: false },
@@ -338,7 +368,7 @@ export default function App() {
 
   const [myBetsHistory, setMyBetsHistory] = useState([]);
 
-  // --- JOGADORES AO VIVO NA MESA ---
+  // Jogadores da Mesa
   const [livePlayers, setLivePlayers] = useState([
     { name: 'Ursinho_Pimpão 🧸', bet: 25, cashedOut: false, win: 0, mult: 0, target: 1.45 },
     { name: 'Joaninha_Feliz 🐞', bet: 50, cashedOut: false, win: 0, mult: 0, target: 2.20 },
@@ -347,27 +377,33 @@ export default function App() {
     { name: 'Coelhinho_Saltador 🐰', bet: 30, cashedOut: false, win: 0, mult: 0, target: 3.50 },
   ]);
 
-  // --- CHAT DA COMUNIDADE ---
+  // Chat
   const [chatMessages, setChatMessages] = useState([
-    { user: 'Ursinho_Pimpão', msg: 'Bora que o Piu-Piu tá pagando muito! 🚀', time: '22:10' },
-    { user: 'Dino_Baby', msg: 'Acabei de fazer um Pix de R$ 50 pra banca! 💸', time: '22:15' },
-    { user: 'Pipoca_Doce', msg: 'Resgatei em 3.2x! Sensacional 🍿', time: '22:18' },
+    { user: 'Ursinho_Pimpão', msg: 'Depositei R$ 20 e ganhei R$ 120 de bônus! 🚀', time: '22:30' },
+    { user: 'Dino_Baby', msg: 'Convidei um amigo e ganhei +R$ 20! 🎉', time: '22:35' },
+    { user: 'Pipoca_Doce', msg: 'Piu-Piu tá voando alto hoje! 🍿', time: '22:40' },
   ]);
   const [newChatInput, setNewChatInput] = useState('');
 
-  // --- ADMIN E GGR ---
+  // Admin
   const [houseRigor, setHouseRigor] = useState('NORMAL');
   const [houseStats, setHouseStats] = useState(() => {
-    const saved = localStorage.getItem('piupiu_housestats_v4');
+    const saved = localStorage.getItem('redbird_housestats_v5');
     return saved ? JSON.parse(saved) : { totalBets: 0, totalPaid: 0 };
   });
 
-  // Modal Pix States
-  const [pixAmount, setPixAmount] = useState(50);
+  // Modal Depósito Pix
+  const [depositAmount, setDepositAmount] = useState(20);
   const [pixCopied, setPixCopied] = useState(false);
   const [pixSimulateSuccess, setPixSimulateSuccess] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState(25);
+
+  // Modal Saque
+  const [withdrawAmount, setWithdrawAmount] = useState(20);
+  const [withdrawError, setWithdrawError] = useState('');
   const [withdrawSuccessAlert, setWithdrawSuccessAlert] = useState(false);
+
+  // Modal Convidar
+  const [inviteCopied, setInviteCopied] = useState(false);
 
   // Refs de Física e Canvas
   const canvasRef = useRef(null);
@@ -388,24 +424,34 @@ export default function App() {
     { x: 400, h: 60, color: '#86efac' }
   ]);
 
-  // Salvar no Storage
+  // Persistências
   useEffect(() => {
-    localStorage.setItem('piupiu_balance_v4', balance.toString());
-  }, [balance]);
+    localStorage.setItem('redbird_real_balance', realBalance.toString());
+  }, [realBalance]);
 
   useEffect(() => {
-    localStorage.setItem('piupiu_housestats_v4', JSON.stringify(houseStats));
+    localStorage.setItem('redbird_bonus_balance', bonusBalance.toString());
+  }, [bonusBalance]);
+
+  useEffect(() => {
+    localStorage.setItem('redbird_has_deposited', hasDeposited.toString());
+    localStorage.setItem('redbird_total_deposited', totalDeposited.toString());
+    localStorage.setItem('redbird_friends_invited', friendsInvited.toString());
+  }, [hasDeposited, totalDeposited, friendsInvited]);
+
+  useEffect(() => {
+    localStorage.setItem('redbird_housestats_v5', JSON.stringify(houseStats));
   }, [houseStats]);
 
   useEffect(() => {
     if (userProfile) {
-      localStorage.setItem('piupiu_user_profile', JSON.stringify(userProfile));
+      localStorage.setItem('redbird_user_profile', JSON.stringify(userProfile));
     } else {
-      localStorage.removeItem('piupiu_user_profile');
+      localStorage.removeItem('redbird_user_profile');
     }
   }, [userProfile]);
 
-  // Salvar Cadastro do Usuário
+  // Cadastro Inicial
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
     if (!registerName.trim() || registerName.trim().length < 3) {
@@ -431,14 +477,13 @@ export default function App() {
 
     setUserProfile(newProfile);
     setRegisterError('');
+    // Bônus inicial de cadastro: R$ 10 de bônus cortesia
+    setBonusBalance(prev => prev + 10.00);
     audio.playTaDah();
   };
 
   const handleLogout = () => {
     setUserProfile(null);
-    setRegisterName('');
-    setRegisterPhone('');
-    setRegisterPixKey('');
     setShowProfileModal(false);
   };
 
@@ -462,7 +507,25 @@ export default function App() {
     audio.sfxMuted = !next;
   };
 
-  // Ciclo da Próxima Rodada
+  // Descontar aposta (gasta saldo bônus primeiro, depois saldo real)
+  const deductBet = (amount) => {
+    if (totalBalance < amount) return false;
+    if (bonusBalance >= amount) {
+      setBonusBalance(prev => prev - amount);
+    } else {
+      const remainder = amount - bonusBalance;
+      setBonusBalance(0);
+      setRealBalance(prev => prev - remainder);
+    }
+    return true;
+  };
+
+  // Adicionar ganho (lucro sempre entra como SALDO REAL SACÁVEL!)
+  const addWin = (amount) => {
+    setRealBalance(prev => prev + amount);
+  };
+
+  // Preparar Próxima Rodada
   const prepareNextRound = () => {
     const rand = Math.random();
     let maxMult = 1.00;
@@ -519,7 +582,6 @@ export default function App() {
     setRoundPhase('WAITING');
   };
 
-  // Temporizador de Contagem Regressiva
   useEffect(() => {
     let timer = null;
     if (roundPhase === 'WAITING') {
@@ -540,7 +602,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, [roundPhase]);
 
-  // Intervalo pós-crash
   useEffect(() => {
     let timeout = null;
     if (roundPhase === 'CRASHED') {
@@ -557,14 +618,15 @@ export default function App() {
 
   // Apostar 1
   const placeBet1 = () => {
-    if (balance < bet1 || bet1 <= 0) {
+    if (totalBalance < bet1 || bet1 <= 0) {
       setShowDepositModal(true);
       return;
     }
-    setBalance(prev => prev - bet1);
-    setHouseStats(prev => ({ ...prev, totalBets: prev.totalBets + bet1 }));
-    setBet1Placed(true);
-    audio.playCoin();
+    if (deductBet(bet1)) {
+      setHouseStats(prev => ({ ...prev, totalBets: prev.totalBets + bet1 }));
+      setBet1Placed(true);
+      audio.playCoin();
+    }
   };
 
   const cashOut1 = () => {
@@ -573,7 +635,7 @@ export default function App() {
     const win = bet1 * currentMult;
     setBet1Win(win);
     setBet1CashedOut(true);
-    setBalance(prev => prev + win);
+    addWin(win); // Entra como saldo real
     setHouseStats(prev => ({ ...prev, totalPaid: prev.totalPaid + win }));
     audio.playTaDah();
 
@@ -585,14 +647,15 @@ export default function App() {
 
   // Apostar 2
   const placeBet2 = () => {
-    if (balance < bet2 || bet2 <= 0) {
+    if (totalBalance < bet2 || bet2 <= 0) {
       setShowDepositModal(true);
       return;
     }
-    setBalance(prev => prev - bet2);
-    setHouseStats(prev => ({ ...prev, totalBets: prev.totalBets + bet2 }));
-    setBet2Placed(true);
-    audio.playCoin();
+    if (deductBet(bet2)) {
+      setHouseStats(prev => ({ ...prev, totalBets: prev.totalBets + bet2 }));
+      setBet2Placed(true);
+      audio.playCoin();
+    }
   };
 
   const cashOut2 = () => {
@@ -601,7 +664,7 @@ export default function App() {
     const win = bet2 * currentMult;
     setBet2Win(win);
     setBet2CashedOut(true);
-    setBalance(prev => prev + win);
+    addWin(win);
     setHouseStats(prev => ({ ...prev, totalPaid: prev.totalPaid + win }));
     audio.playTaDah();
 
@@ -977,6 +1040,66 @@ export default function App() {
     setNewChatInput('');
   };
 
+  // EXECUÇÃO DO DEPÓSITO COM REGRA: MÍNIMO R$ 20 GANHA +R$ 120 DE BÔNUS
+  const handleApproveDeposit = () => {
+    if (depositAmount < 20) return;
+
+    // Credita o valor real
+    setRealBalance(prev => prev + depositAmount);
+    setTotalDeposited(prev => prev + depositAmount);
+    setHasDeposited(true);
+
+    // Se depositou R$ 20 ou mais, ganha R$ 120 de bônus!
+    const bonusGiven = 120.00;
+    setBonusBalance(prev => prev + bonusGiven);
+
+    audio.playCoin();
+    setPixSimulateSuccess(true);
+    setTimeout(() => {
+      setShowDepositModal(false);
+      setPixSimulateSuccess(false);
+    }, 1500);
+  };
+
+  // EXECUÇÃO DO SAQUE COM CRITÉRIOS DE META
+  const handleRequestWithdraw = () => {
+    setWithdrawError('');
+
+    // CRITÉRIO 1: Precisa ter feito depósito mínimo de R$ 20
+    if (!hasDeposited || totalDeposited < 20) {
+      setWithdrawError('Meta não atingida: É necessário fazer pelo menos 1 depósito de no mínimo R$ 20,00 para desbloquear a conta de saque.');
+      return;
+    }
+
+    // CRITÉRIO 2: Saldo Bônus NÃO pode ser sacado, apenas o saldo REAL!
+    if (withdrawAmount > realBalance) {
+      setWithdrawError(`Saldo bônus não pode ser sacado. Seu saldo real disponível para saque é de R$ ${realBalance.toFixed(2)}.`);
+      return;
+    }
+
+    if (withdrawAmount <= 0) {
+      setWithdrawError('Informe um valor de saque válido.');
+      return;
+    }
+
+    // Sucesso!
+    setRealBalance(prev => prev - withdrawAmount);
+    audio.playTaDah();
+    setWithdrawSuccessAlert(true);
+    setTimeout(() => {
+      setShowWithdrawModal(false);
+      setWithdrawSuccessAlert(false);
+    }, 1600);
+  };
+
+  // Simular convite de amigo (+R$ 20 de bônus)
+  const handleSimulateInviteFriend = () => {
+    setFriendsInvited(prev => prev + 1);
+    setBonusBalance(prev => prev + 20.00); // Bônus não sacável
+    audio.playTaDah();
+    setInviteCopied(true);
+  };
+
   const ggr = houseStats.totalBets - houseStats.totalPaid;
 
   return (
@@ -986,14 +1109,14 @@ export default function App() {
     >
       
       {/* HEADER PRINCIPAL */}
-      <header className="w-full max-w-xl flex justify-between items-center mb-2.5 bg-white/95 backdrop-blur-md p-3 rounded-3xl border-4 border-amber-300 shadow-pop-amber">
+      <header className="w-full max-w-xl flex justify-between items-center mb-2 bg-white/95 backdrop-blur-md p-3 rounded-3xl border-4 border-amber-300 shadow-pop-amber">
         <div className="flex items-center gap-2">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center border-2 border-white shadow-md animate-float-wiggle">
             <span className="text-2xl">🐤</span>
           </div>
           <div>
             <h1 className="text-xl font-cartoon tracking-wider text-rose-500 flex items-center gap-1 leading-none drop-shadow-sm">
-              PIU-PIU <span className="text-xs bg-amber-400 text-amber-950 px-2 py-0.5 rounded-full font-fredoka font-black border-2 border-amber-500">BETS</span>
+              RED BIRD <span className="text-xs bg-amber-400 text-amber-950 px-2 py-0.5 rounded-full font-fredoka font-black border-2 border-amber-500">GET MONEY</span>
             </h1>
             {userProfile ? (
               <button 
@@ -1011,14 +1134,6 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Saldo Carteira */}
-          <div className="bg-amber-100 px-2.5 py-1.5 rounded-2xl border-2 border-amber-400 flex items-center gap-1.5 shadow-sm">
-            <Coins className="w-4 h-4 text-amber-600 animate-spin" style={{ animationDuration: '6s' }} />
-            <span className="font-extrabold text-amber-800 text-sm">
-              R$ {balance.toFixed(2)}
-            </span>
-          </div>
-
           {/* Depositar Pix */}
           <button 
             onClick={() => setShowDepositModal(true)}
@@ -1033,6 +1148,15 @@ export default function App() {
             className="btn-pop bg-sky-500 hover:bg-sky-400 text-white px-2.5 py-1.5 rounded-2xl border-2 border-sky-600 font-black text-xs flex items-center gap-1 shadow-sm"
           >
             <ArrowUpFromLine className="w-3.5 h-3.5" /> Sacar
+          </button>
+
+          {/* Botão Metas */}
+          <button 
+            onClick={() => setShowGoalsModal(true)}
+            className="btn-pop p-1.5 rounded-2xl border-2 bg-amber-100 border-amber-300 text-amber-800"
+            title="Metas de Saque e Bônus"
+          >
+            <Target className="w-4 h-4 text-amber-600" />
           </button>
 
           {/* Música */}
@@ -1065,18 +1189,51 @@ export default function App() {
         </div>
       </header>
 
-      {/* BANNER DE DINHEIRO REAL & GATEWAY PIX */}
-      <div className="w-full max-w-xl mb-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white p-2.5 rounded-2xl border-2 border-emerald-600 shadow-sm flex items-center justify-between text-xs font-bold">
-        <div className="flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-yellow-300 shrink-0" />
-          <span>Depósitos & Saques Instantâneos via Chave Pix</span>
+      {/* BARRA DE SALDO DETALHADA (REAL SACÁVEL VS BÔNUS CONTA) */}
+      <div className="w-full max-w-xl mb-2 grid grid-cols-2 gap-2">
+        <div className="bg-emerald-500 text-white p-2.5 rounded-2xl border-2 border-emerald-600 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase text-emerald-100 block">Saldo Real Sacável:</span>
+            <span className="font-cartoon text-xl leading-none">R$ {realBalance.toFixed(2)}</span>
+          </div>
+          <Coins className="w-6 h-6 text-yellow-300 animate-spin" style={{ animationDuration: '8s' }} />
         </div>
-        <button 
-          onClick={() => setShowGatewayInfoModal(true)}
-          className="btn-pop bg-white text-emerald-800 px-2.5 py-1 rounded-xl text-[11px] font-black border border-emerald-300 flex items-center gap-1 shadow-sm"
-        >
-          <ExternalLink className="w-3 h-3" /> Como Funciona
-        </button>
+
+        <div className="bg-amber-400 text-amber-950 p-2.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase text-amber-900 block flex items-center gap-1">
+              Bônus Conta: <Gift className="w-3 h-3" />
+            </span>
+            <span className="font-cartoon text-xl leading-none">R$ {bonusBalance.toFixed(2)}</span>
+          </div>
+          <span className="text-[9px] bg-amber-200 text-amber-900 font-black px-1.5 py-0.5 rounded-md border border-amber-400">
+            Apenas Jogo
+          </span>
+        </div>
+      </div>
+
+      {/* BANNER DE METAS E BÔNUS (DEPÓSITO MIN 20 + R$120 BÔNUS / CONVIDE AMIGO + R$20) */}
+      <div className="w-full max-w-xl mb-2 bg-gradient-to-r from-rose-500 via-amber-500 to-emerald-500 text-white p-2.5 rounded-2xl border-2 border-amber-300 shadow-sm flex items-center justify-between text-xs font-bold">
+        <div className="flex items-center gap-1.5">
+          <Gift className="w-4 h-4 text-yellow-200 shrink-0 animate-bounce" />
+          <span className="text-[11px] leading-tight">
+            Deposite mín R$ 20 e ganhe <strong>+R$ 120 de Bônus</strong>! Convide amigos e ganhe <strong>+R$ 20</strong>!
+          </span>
+        </div>
+        <div className="flex gap-1 shrink-0 ml-1">
+          <button 
+            onClick={() => setShowInviteModal(true)}
+            className="btn-pop bg-white text-rose-600 px-2 py-1 rounded-xl text-[10px] font-black border border-rose-300 flex items-center gap-1 shadow-sm"
+          >
+            <Share2 className="w-3 h-3" /> +R$ 20
+          </button>
+          <button 
+            onClick={() => setShowGoalsModal(true)}
+            className="btn-pop bg-yellow-300 text-amber-950 px-2 py-1 rounded-xl text-[10px] font-black border border-yellow-400 flex items-center gap-1 shadow-sm"
+          >
+            <Target className="w-3 h-3" /> Metas
+          </button>
+        </div>
       </div>
 
       {/* HISTÓRICO DE MULTIPLICADORES */}
@@ -1113,7 +1270,7 @@ export default function App() {
             <span className="font-black text-purple-700 uppercase tracking-wider flex items-center gap-1 text-sm">
               <ShieldAlert className="w-4 h-4 text-purple-600" /> Painel da Banca (GGR) 🏰
             </span>
-            <span className="text-[10px] text-purple-500 font-bold">Admin</span>
+            <span className="text-[10px] text-purple-500 font-bold">Chave Pix: {OWNER_PIX_KEY}</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -1186,13 +1343,13 @@ export default function App() {
                 />
               </div>
               <p className="text-[11px] text-slate-500 font-bold mt-1">
-                Aposte para decolar com o Piu-Piu! 🎈
+                Aposte para decolar com o Red Bird! 🎈
               </p>
             </div>
           </div>
         )}
 
-        {/* FASE 2: VOO DO PIU-PIU */}
+        {/* FASE 2: VOO DO RED BIRD */}
         {roundPhase === 'FLYING' && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-amber-300 border-4 border-amber-500 px-6 py-1.5 rounded-3xl shadow-pop-amber flex items-center gap-2 animate-bounce">
             <Sparkles className="w-5 h-5 text-amber-700 animate-spin" />
@@ -1215,9 +1372,9 @@ export default function App() {
         {roundPhase === 'CRASHED' && (
           <div className="absolute inset-0 bg-rose-500/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in zoom-in-95 duration-200">
             <div className="text-5xl mb-1 animate-bounce">💥🙈💫</div>
-            <h2 className="text-3xl font-cartoon text-white mb-1 drop-shadow-md">PIU-PIU CRACHOU!</h2>
+            <h2 className="text-3xl font-cartoon text-white mb-1 drop-shadow-md">RED BIRD CRACHOU!</h2>
             <p className="text-yellow-200 text-sm font-black mb-3">
-              Multiplicador: <span className="text-white text-lg bg-black/20 px-2 py-0.5 rounded-xl">{roundMultiplier.toFixed(2)}x</span>
+              Multiplicador Final: <span className="text-white text-lg bg-black/20 px-2 py-0.5 rounded-xl">{roundMultiplier.toFixed(2)}x</span>
             </p>
             <span className="bg-yellow-300 text-amber-950 text-xs font-black px-4 py-1.5 rounded-full border-2 border-yellow-400 shadow-md animate-pulse">
               Preparando a próxima rodada...
@@ -1310,7 +1467,7 @@ export default function App() {
             <button
               onClick={() => {
                 setBet1Placed(false);
-                setBalance(prev => prev + bet1);
+                setRealBalance(prev => prev + bet1);
               }}
               className="w-full btn-pop bg-rose-400 hover:bg-rose-300 text-white font-black py-2.5 rounded-2xl border-2 border-rose-500 text-xs"
             >
@@ -1407,7 +1564,7 @@ export default function App() {
             <button
               onClick={() => {
                 setBet2Placed(false);
-                setBalance(prev => prev + bet2);
+                setRealBalance(prev => prev + bet2);
               }}
               className="w-full btn-pop bg-rose-400 hover:bg-rose-300 text-white font-black py-2.5 rounded-2xl border-2 border-rose-500 text-xs"
             >
@@ -1532,7 +1689,7 @@ export default function App() {
             {[
               { rank: '🥇 1º', name: 'SuperDino_99', mult: 28.5, win: 2850.00 },
               { rank: '🥈 2º', name: 'Joaninha_Rainha', mult: 16.4, win: 1640.00 },
-              { rank: '🥉 3º', name: 'PiuPiu_Master', mult: 12.0, win: 1200.00 },
+              { rank: '🥉 3º', name: 'RedBird_Master', mult: 12.0, win: 1200.00 },
             ].map((t, idx) => (
               <div key={idx} className="flex justify-between items-center bg-amber-50/60 px-3 py-1.5 rounded-2xl text-xs border border-amber-200">
                 <div className="flex items-center gap-2">
@@ -1549,7 +1706,7 @@ export default function App() {
         )}
       </div>
 
-      {/* --- MODAL DE CADASTRO OBRIGATÓRIO (SE NÃO TIVER CADASTRO) --- */}
+      {/* --- MODAL 1: CADASTRO INICIAL OBRIGATÓRIO --- */}
       {!userProfile && (
         <div className="fixed inset-0 bg-sky-950/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-white border-4 border-amber-400 w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-cartoon-lg space-y-4 animate-in zoom-in-95">
@@ -1557,7 +1714,7 @@ export default function App() {
               <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center border-2 border-white shadow-md animate-bounce">
                 <span className="text-3xl">🐤</span>
               </div>
-              <h2 className="text-2xl font-cartoon text-rose-500">BEM-VINDO AO PIU-PIU BETS!</h2>
+              <h2 className="text-2xl font-cartoon text-rose-500">RED BIRD GET MONEY!</h2>
               <p className="text-xs text-slate-600 font-bold">
                 Cadastre seus dados para receber seus depósitos e sacar seus lucros via Pix!
               </p>
@@ -1592,7 +1749,7 @@ export default function App() {
                 <input 
                   type="tel"
                   required
-                  placeholder="Ex: (11) 98765-4321"
+                  placeholder="Ex: (99) 98528-0205"
                   value={registerPhone}
                   onChange={(e) => setRegisterPhone(e.target.value)}
                   className="w-full bg-slate-50 border-2 border-sky-300 rounded-2xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-sky-500"
@@ -1602,15 +1759,15 @@ export default function App() {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-[11px] font-black text-slate-700 flex items-center gap-1">
-                    <Key className="w-3.5 h-3.5 text-amber-600" /> Chave Pix Principal:
+                    <Key className="w-3.5 h-3.5 text-amber-600" /> Sua Chave Pix de Recebimento:
                   </label>
                   <select 
                     value={registerPixType}
                     onChange={(e) => setRegisterPixType(e.target.value)}
                     className="text-[10px] bg-slate-100 border border-slate-300 rounded-lg px-1.5 py-0.5 font-bold text-slate-700"
                   >
+                    <option value="Celular">Celular</option>
                     <option value="CPF">CPF</option>
-                    <option value="Telefone">Celular</option>
                     <option value="E-mail">E-mail</option>
                     <option value="Aleatória">Aleatória</option>
                   </select>
@@ -1618,7 +1775,7 @@ export default function App() {
                 <input 
                   type="text"
                   required
-                  placeholder="Digite sua chave Pix para receber os saques"
+                  placeholder="Informe sua chave Pix para receber seus saques"
                   value={registerPixKey}
                   onChange={(e) => setRegisterPixKey(e.target.value)}
                   className="w-full bg-slate-50 border-2 border-sky-300 rounded-2xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-sky-500"
@@ -1626,22 +1783,299 @@ export default function App() {
               </div>
 
               <div className="bg-amber-50 p-2.5 rounded-2xl border border-amber-200 text-[11px] text-amber-900 font-bold flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Bônus especial de boas-vindas: <strong>R$ 50,00</strong> creditados na hora para testar!</span>
+                <Gift className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Bônus de Cadastro: <strong>R$ 10,00</strong> em conta para começar a se divertir!</span>
               </div>
 
               <button
                 type="submit"
                 className="w-full btn-pop bg-emerald-500 hover:bg-emerald-400 text-white font-cartoon text-lg py-3.5 rounded-2xl border-4 border-emerald-700 shadow-pop-emerald uppercase tracking-wider"
               >
-                Cadastrar e Começar a Jogar 🚀
+                Cadastrar e Decolar 🚀
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* --- MODAL DO PERFIL DO USUÁRIO --- */}
+      {/* --- MODAL 2: METAS E CRITÉRIOS DE SAQUE --- */}
+      {showGoalsModal && (
+        <div className="fixed inset-0 bg-sky-950/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-amber-400 w-full max-w-md rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95 text-xs">
+            <div className="flex justify-between items-center">
+              <h3 className="font-cartoon text-xl text-amber-600 flex items-center gap-1.5">
+                <Target className="w-5 h-5" /> Metas de Saque & Bônus
+              </h3>
+              <button 
+                onClick={() => setShowGoalsModal(false)}
+                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
+              >✕</button>
+            </div>
+
+            <p className="text-slate-600 font-bold leading-relaxed">
+              Para garantir a segurança da plataforma e manter os bônus ativos, complete os critérios abaixo:
+            </p>
+
+            <div className="space-y-2">
+              {/* Meta 1: Depósito Mínimo de R$ 20 */}
+              <div className={`p-3 rounded-2xl border-2 transition ${hasDeposited && totalDeposited >= 20 ? 'bg-emerald-50 border-emerald-400 text-emerald-950' : 'bg-slate-50 border-slate-300 text-slate-700'}`}>
+                <div className="flex items-center justify-between">
+                  <span className="font-black text-sm flex items-center gap-1.5">
+                    {hasDeposited && totalDeposited >= 20 ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Lock className="w-4 h-4 text-slate-400" />}
+                    1. Fazer 1 Depósito Mínimo de R$ 20
+                  </span>
+                  <span className="font-black text-[10px] bg-white px-2 py-0.5 rounded-lg border">
+                    {hasDeposited ? `R$ ${totalDeposited.toFixed(2)} / R$ 20,00` : 'Pendente'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 mt-1 font-medium">
+                  🎁 Ao depositar R$ 20 ou mais, você ganha <strong>+R$ 120,00 de BÔNUS</strong> automático na sua conta!
+                </p>
+              </div>
+
+              {/* Meta 2: Convidar Amigos */}
+              <div className="p-3 rounded-2xl border-2 bg-amber-50 border-amber-300 text-amber-950">
+                <div className="flex items-center justify-between">
+                  <span className="font-black text-sm flex items-center gap-1.5">
+                    <Gift className="w-4 h-4 text-amber-600" />
+                    2. Convide Amigos (+R$ 20 Bônus)
+                  </span>
+                  <span className="font-black text-[10px] bg-white px-2 py-0.5 rounded-lg border border-amber-300">
+                    {friendsInvited} convidados
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-800 mt-1 font-medium">
+                  Ganhe <strong>R$ 20,00 de bônus</strong> por cada amigo cadastrado com seu link!
+                </p>
+              </div>
+
+              {/* Regra do Saldo Bônus */}
+              <div className="bg-rose-50 p-2.5 rounded-2xl border border-rose-200 text-rose-900 text-[11px] font-bold">
+                ⚠️ <strong>Atenção:</strong> O saldo de bônus <u>não pode ser sacado diretamente</u>. Ele deve ser utilizado para jogar e apostar. Todo o lucro gerado pelas apostas cai diretamente no seu <strong>Saldo Real</strong> e pode ser sacado para seu Pix!
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowGoalsModal(false);
+                setShowDepositModal(true);
+              }}
+              className="w-full btn-pop bg-emerald-500 hover:bg-emerald-400 text-white font-cartoon text-sm py-3 rounded-2xl border-4 border-emerald-700 shadow-pop-emerald uppercase"
+            >
+              Fazer Depósito de R$ 20 & Ganhar R$ 120 Bônus 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 3: CONVIDAR AMIGOS (+R$ 20 BÔNUS) --- */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-sky-950/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-rose-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95 text-xs">
+            <div className="flex justify-between items-center">
+              <h3 className="font-cartoon text-xl text-rose-600 flex items-center gap-1.5">
+                <Share2 className="w-5 h-5" /> Convide e Ganhe R$ 20
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowInviteModal(false);
+                  setInviteCopied(false);
+                }}
+                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
+              >✕</button>
+            </div>
+
+            <p className="text-slate-600 font-bold">
+              Compartilhe seu link exclusivo com amigos. Assim que eles entrarem, você ganha <strong>+R$ 20,00 de bônus</strong> para jogar!
+            </p>
+
+            <div className="bg-rose-50 p-3 rounded-2xl border border-rose-200 space-y-1.5">
+              <span className="text-[10px] font-black text-rose-800 uppercase block">Seu Link de Convite:</span>
+              <div className="flex items-center gap-1">
+                <input 
+                  readOnly 
+                  value="https://redbirdgetmoney.loca.lt/?ref=99985280205"
+                  className="w-full bg-white px-2 py-1.5 rounded-xl border text-[10px] font-mono font-bold text-slate-700 truncate"
+                />
+                <button 
+                  onClick={handleSimulateInviteFriend}
+                  className="btn-pop bg-rose-500 hover:bg-rose-400 text-white p-2 rounded-xl border border-rose-600 shrink-0"
+                  title="Copiar Link e Simular Bônus"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {inviteCopied && (
+                <span className="text-[11px] text-emerald-600 font-black block text-center animate-bounce">
+                  🎉 Link copiado e +R$ 20 de Bônus creditados!
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={handleSimulateInviteFriend}
+              className="w-full btn-pop bg-rose-500 hover:bg-rose-400 text-white font-cartoon text-sm py-3 rounded-2xl border-4 border-rose-700 shadow-pop-rose uppercase"
+            >
+              Simular Novo Amigo Cadastrado (+R$ 20) 🎁
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 4: DEPÓSITO PIX COM A CHAVE DO DONO (99 985280205) --- */}
+      {showDepositModal && (
+        <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-emerald-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3 animate-in zoom-in-95">
+            <div className="flex justify-between items-center">
+              <h3 className="font-cartoon text-xl text-emerald-600 flex items-center gap-2">
+                <ArrowDownToLine className="w-6 h-6 text-emerald-500" /> Depositar via Pix
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowDepositModal(false);
+                  setPixSimulateSuccess(false);
+                }}
+                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
+              >✕</button>
+            </div>
+
+            <div className="bg-amber-50 p-2 rounded-2xl border border-amber-300 text-[11px] text-amber-950 font-black flex items-center gap-1.5">
+              <Gift className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Deposite <strong>R$ 20 ou mais</strong> e ganhe <strong>+R$ 120,00 de Bônus</strong> na hora!</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1.5">
+              {[20, 30, 50, 100, 200, 500].map(val => (
+                <button
+                  key={val}
+                  onClick={() => setDepositAmount(val)}
+                  className={`btn-pop py-2 rounded-2xl font-black text-xs border-2 transition ${
+                    depositAmount === val 
+                      ? 'bg-emerald-500 text-white border-emerald-600' 
+                      : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                  }`}
+                >
+                  R$ {val}
+                </button>
+              ))}
+            </div>
+
+            {/* Chave Pix do Dono da Banca */}
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center space-y-2">
+              <span className="text-[10px] text-slate-600 font-black uppercase block">Chave Pix Oficial da Banca:</span>
+              <div className="bg-emerald-100 text-emerald-950 font-mono font-black text-base py-1.5 px-3 rounded-xl border-2 border-emerald-400 flex items-center justify-center gap-2">
+                <span>{OWNER_PIX_KEY}</span>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard?.writeText(OWNER_PIX_KEY);
+                    setPixCopied(true);
+                    setTimeout(() => setPixCopied(false), 2000);
+                  }}
+                  className="btn-pop bg-white p-1 rounded-lg border border-emerald-300 text-emerald-800"
+                  title="Copiar Chave Pix"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold">Tipo: Telefone • Destinatário: Dono da Banca</p>
+            </div>
+
+            {pixSimulateSuccess && (
+              <div className="bg-emerald-100 text-emerald-900 border border-emerald-300 p-2 rounded-2xl text-xs font-black text-center animate-bounce">
+                ✅ Depósito de R$ {depositAmount.toFixed(2)} aprovado + R$ 120,00 de Bônus creditados!
+              </div>
+            )}
+
+            <button
+              onClick={handleApproveDeposit}
+              className="w-full btn-pop bg-emerald-500 hover:bg-emerald-400 text-white font-cartoon text-base py-3 rounded-2xl border-4 border-emerald-700 shadow-pop-emerald uppercase tracking-wider"
+            >
+              Confirmar Pagamento R$ {depositAmount.toFixed(2)} 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 5: SAQUE COM CRITÉRIOS DE META --- */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-sky-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3 animate-in zoom-in-95">
+            <div className="flex justify-between items-center">
+              <h3 className="font-cartoon text-xl text-sky-600 flex items-center gap-2">
+                <ArrowUpFromLine className="w-6 h-6 text-sky-500" /> Sacar Lucros via Pix
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowWithdrawModal(false);
+                  setWithdrawError('');
+                  setWithdrawSuccessAlert(false);
+                }}
+                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
+              >✕</button>
+            </div>
+
+            {/* Status da Meta */}
+            <div className={`p-2.5 rounded-2xl border-2 text-xs ${hasDeposited && totalDeposited >= 20 ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900'}`}>
+              <div className="flex items-center justify-between font-black">
+                <span>Meta de Depósito (mín R$ 20):</span>
+                <span>{hasDeposited && totalDeposited >= 20 ? '✅ Desbloqueado' : '🔒 Bloqueado'}</span>
+              </div>
+              <p className="text-[10px] mt-0.5">
+                {hasDeposited && totalDeposited >= 20 ? 'Você atingiu o critério de depósito para sacar!' : 'Faça pelo menos 1 depósito de R$ 20 para liberar seus saques.'}
+              </p>
+            </div>
+
+            <div className="bg-sky-50 p-2.5 rounded-2xl border border-sky-200 text-xs space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-bold">Saldo Real Sacável:</span>
+                <span className="font-cartoon text-sm text-emerald-600">R$ {realBalance.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 text-[10px] font-bold">Saldo Bônus (Não Sacável):</span>
+                <span className="font-cartoon text-xs text-amber-700">R$ {bonusBalance.toFixed(2)}</span>
+              </div>
+              <div className="pt-1 border-t border-sky-200">
+                <span className="text-[10px] text-slate-500 font-bold block">Chave Pix Cadastrada:</span>
+                <span className="font-mono font-bold text-sky-950 block truncate">{userProfile?.pixKey || OWNER_PIX_KEY}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-black text-slate-700 block mb-1">Valor do Saque (R$):</label>
+              <input 
+                type="number"
+                min="5"
+                max={realBalance}
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(Math.max(1, parseFloat(e.target.value) || 0))}
+                className="w-full bg-slate-50 border-2 border-sky-300 rounded-2xl px-3 py-2 text-sm font-black text-emerald-600 focus:outline-none focus:border-sky-500"
+              />
+            </div>
+
+            {withdrawError && (
+              <div className="bg-rose-100 text-rose-800 border-2 border-rose-300 p-2 rounded-2xl text-[11px] font-bold flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{withdrawError}</span>
+              </div>
+            )}
+
+            {withdrawSuccessAlert && (
+              <div className="bg-emerald-100 text-emerald-900 border border-emerald-300 p-2 rounded-2xl text-xs font-black text-center animate-bounce">
+                🎉 Saque de R$ {withdrawAmount.toFixed(2)} enviado para sua chave Pix com sucesso!
+              </div>
+            )}
+
+            <button
+              onClick={handleRequestWithdraw}
+              className="w-full btn-pop bg-sky-500 hover:bg-sky-400 text-white font-cartoon text-base py-3 rounded-2xl border-4 border-sky-700 shadow-pop-sky uppercase tracking-wider"
+            >
+              Transferir para meu Pix R$ {withdrawAmount.toFixed(2)} 💸
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 6: PERFIL DO USUÁRIO --- */}
       {showProfileModal && userProfile && (
         <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border-4 border-emerald-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95">
@@ -1682,220 +2116,9 @@ export default function App() {
         </div>
       )}
 
-      {/* --- MODAL 1: DEPÓSITO PIX INSTANTÂNEO --- */}
-      {showDepositModal && (
-        <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border-4 border-emerald-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95">
-            <div className="flex justify-between items-center">
-              <h3 className="font-cartoon text-xl text-emerald-600 flex items-center gap-2">
-                <ArrowDownToLine className="w-6 h-6 text-emerald-500" /> Depositar via Pix
-              </h3>
-              <button 
-                onClick={() => {
-                  setShowDepositModal(false);
-                  setPixSimulateSuccess(false);
-                }}
-                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
-              >✕</button>
-            </div>
-
-            <p className="text-xs text-slate-600 font-bold">
-              Selecione o valor para recarregar sua conta via Pix:
-            </p>
-
-            <div className="grid grid-cols-3 gap-1.5">
-              {[10, 20, 50, 100, 200, 500].map(val => (
-                <button
-                  key={val}
-                  onClick={() => setPixAmount(val)}
-                  className={`btn-pop py-2.5 rounded-2xl font-black text-xs border-2 transition ${
-                    pixAmount === val 
-                      ? 'bg-emerald-500 text-white border-emerald-600' 
-                      : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                  }`}
-                >
-                  R$ {val}
-                </button>
-              ))}
-            </div>
-
-            {/* QR CODE PIX REALÍSTICO */}
-            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center space-y-2">
-              <div className="w-28 h-28 mx-auto bg-white p-2 rounded-2xl border border-slate-300 flex items-center justify-center shadow-inner">
-                <div className="w-full h-full bg-slate-900 rounded grid grid-cols-7 gap-0.5 p-1">
-                  {Array.from({ length: 49 }).map((_, i) => (
-                    <div key={i} className={`rounded-sm ${(i * 11) % 3 === 0 ? 'bg-white' : 'bg-transparent'}`} />
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                <input 
-                  readOnly 
-                  value={`00020126580014br.gov.bcb.pix0136piupiu-${pixAmount}-bets520400005303986540${pixAmount}.005802BR5912PIU PIU BETS6009SAO PAULO62070503***6304`}
-                  className="w-full bg-white px-2 py-1.5 rounded-xl border text-[9px] font-mono font-bold text-slate-600 truncate"
-                />
-                <button 
-                  onClick={() => {
-                    setPixCopied(true);
-                    setTimeout(() => setPixCopied(false), 2000);
-                  }}
-                  className="btn-pop bg-emerald-100 hover:bg-emerald-200 text-emerald-800 p-2 rounded-xl border border-emerald-300 shrink-0"
-                  title="Copiar Código Pix Copia e Cola"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              {pixCopied && (
-                <span className="text-[10px] text-emerald-600 font-bold block">Código Pix copiado!</span>
-              )}
-            </div>
-
-            {pixSimulateSuccess && (
-              <div className="bg-emerald-100 text-emerald-900 border border-emerald-300 p-2 rounded-2xl text-xs font-black text-center animate-bounce">
-                ✅ Pagamento Pix de R$ {pixAmount.toFixed(2)} aprovado e saldo creditado!
-              </div>
-            )}
-
-            <button
-              onClick={() => {
-                setBalance(prev => prev + pixAmount);
-                audio.playCoin();
-                setPixSimulateSuccess(true);
-                setTimeout(() => {
-                  setShowDepositModal(false);
-                  setPixSimulateSuccess(false);
-                }, 1300);
-              }}
-              className="w-full btn-pop bg-emerald-500 hover:bg-emerald-400 text-white font-cartoon text-base py-3 rounded-2xl border-4 border-emerald-700 shadow-pop-emerald uppercase tracking-wider"
-            >
-              Aprovar Pagamento Pix R$ {pixAmount.toFixed(2)} 🚀
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL 2: SAQUE PIX COM OS DADOS DO CADASTRO --- */}
-      {showWithdrawModal && (
-        <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border-4 border-sky-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95">
-            <div className="flex justify-between items-center">
-              <h3 className="font-cartoon text-xl text-sky-600 flex items-center gap-2">
-                <ArrowUpFromLine className="w-6 h-6 text-sky-500" /> Sacar Lucros via Pix
-              </h3>
-              <button 
-                onClick={() => {
-                  setShowWithdrawModal(false);
-                  setWithdrawSuccessAlert(false);
-                }}
-                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
-              >✕</button>
-            </div>
-
-            <div className="bg-sky-50 p-3 rounded-2xl border border-sky-200 text-xs space-y-1">
-              <span className="text-[10px] text-sky-800 font-bold block">Destinatário Cadastrado:</span>
-              <p className="font-black text-slate-800">{userProfile?.name || 'Jogador Cadastrado'}</p>
-              <p className="font-mono text-[11px] text-sky-900 font-bold bg-white p-1.5 rounded-lg border border-sky-200 truncate">
-                Chave Pix: {userProfile?.pixKey || 'pix@exemplo.com'}
-              </p>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-[11px] font-black text-slate-700">Valor do Saque (R$):</label>
-                <span className="text-[10px] text-emerald-600 font-bold">Disponível: R$ {balance.toFixed(2)}</span>
-              </div>
-              <input 
-                type="number"
-                min="5"
-                max={balance}
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(Math.min(balance, Math.max(5, parseFloat(e.target.value) || 0)))}
-                className="w-full bg-slate-50 border-2 border-sky-300 rounded-2xl px-3 py-2 text-sm font-black text-emerald-600 focus:outline-none focus:border-sky-500"
-              />
-            </div>
-
-            {withdrawSuccessAlert && (
-              <div className="bg-emerald-100 text-emerald-900 border border-emerald-300 p-2 rounded-2xl text-xs font-black text-center animate-bounce">
-                🎉 Saque de R$ {withdrawAmount.toFixed(2)} enviado para sua chave Pix com sucesso!
-              </div>
-            )}
-
-            <button
-              onClick={() => {
-                if (balance < withdrawAmount || withdrawAmount <= 0) return;
-                setBalance(prev => prev - withdrawAmount);
-                audio.playTaDah();
-                setWithdrawSuccessAlert(true);
-                setTimeout(() => {
-                  setShowWithdrawModal(false);
-                  setWithdrawSuccessAlert(false);
-                }, 1400);
-              }}
-              disabled={balance < withdrawAmount || withdrawAmount <= 0}
-              className="w-full btn-pop bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white font-cartoon text-base py-3 rounded-2xl border-4 border-sky-700 shadow-pop-sky uppercase tracking-wider"
-            >
-              Transferir para meu Pix R$ {withdrawAmount.toFixed(2)} 💸
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL 3: COMO COLOCAR DINHEIRO REAL & INTEGRAR GATEWAY PIX --- */}
-      {showGatewayInfoModal && (
-        <div className="fixed inset-0 bg-sky-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border-4 border-emerald-400 w-full max-w-md rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95 text-xs">
-            <div className="flex justify-between items-center">
-              <h3 className="font-cartoon text-xl text-emerald-600 flex items-center gap-2">
-                <CreditCard className="w-5 h-5" /> Integração de Dinheiro Real
-              </h3>
-              <button 
-                onClick={() => setShowGatewayInfoModal(false)}
-                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
-              >✕</button>
-            </div>
-
-            <p className="text-slate-700 font-bold leading-relaxed">
-              Para você receber dinheiro real dos jogadores na sua conta bancária e processar pagamentos Pix automáticos, conectamos uma <strong>API de Pagamento Pix (Gateway)</strong>.
-            </p>
-
-            <div className="space-y-2">
-              <div className="bg-emerald-50 p-2.5 rounded-2xl border border-emerald-200">
-                <h4 className="font-black text-emerald-800 text-[11px] mb-0.5">1. As Melhores Opções no Brasil:</h4>
-                <ul className="list-disc list-inside text-[11px] text-slate-700 space-y-0.5">
-                  <li><strong>Mercado Pago / Asaas / Woovi / SuitPay</strong>: Geram QR Code Pix instantâneo e recebem direto na sua conta.</li>
-                  <li><strong>Taxa média:</strong> R$ 0,50 a R$ 0,99 por depósito recebido.</li>
-                </ul>
-              </div>
-
-              <div className="bg-sky-50 p-2.5 rounded-2xl border border-sky-200">
-                <h4 className="font-black text-sky-800 text-[11px] mb-0.5">2. Como funciona o fluxo automático:</h4>
-                <p className="text-[11px] text-slate-700">
-                  O jogador clica em <em>Depositar R$ 20</em> ➔ A API gera o QR Code ➔ O jogador paga no app do banco dele ➔ O banco notifica nosso sistema via <strong>Webhook</strong> ➔ O saldo cai instantaneamente no joguinho!
-                </p>
-              </div>
-
-              <div className="bg-amber-50 p-2.5 rounded-2xl border border-amber-200">
-                <h4 className="font-black text-amber-900 text-[11px] mb-0.5">3. Próximo Passo:</h4>
-                <p className="text-[11px] text-slate-700">
-                  Podemos criar um backend leve em Node.js (Express) com a rota de Pix do Mercado Pago ou Asaas conectando suas chaves de API quando você quiser ativar!
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowGatewayInfoModal(false)}
-              className="w-full btn-pop bg-emerald-500 hover:bg-emerald-400 text-white font-cartoon text-sm py-2.5 rounded-2xl border-2 border-emerald-700 uppercase"
-            >
-              Entendido! Continuar Jogando 🎮
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* FOOTER */}
       <footer className="mt-3 text-[11px] text-sky-950 font-bold text-center">
-        PIU-PIU BETS • O Jogo Oficial do Passarinho Valioso 🐤 • Teclas: <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">Espaço</kbd> Pular • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">Z</kbd> Sacar Aposta 1 • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">X</kbd> Sacar Aposta 2
+        RED BIRD GET MONEY 🐤 • Chave Pix Oficial da Banca: <strong className="font-mono">{OWNER_PIX_KEY}</strong> • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">Espaço</kbd> Pular • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">Z</kbd> Sacar 1 • <kbd className="bg-white px-1.5 py-0.5 rounded border border-sky-300 text-sky-900">X</kbd> Sacar 2
       </footer>
     </div>
   );
