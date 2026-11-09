@@ -11,7 +11,6 @@ import {
   Users, 
   Sparkles, 
   ShieldAlert, 
-  PlusCircle, 
   ArrowDownToLine, 
   ArrowUpFromLine, 
   MessageSquare, 
@@ -22,10 +21,17 @@ import {
   Send,
   Zap,
   Star,
-  Info
+  User,
+  Phone,
+  Key,
+  LogOut,
+  AlertTriangle,
+  CreditCard,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 
-// --- MOTOR DE ÁUDIO SINTETIZADO (Web Audio API) ---
+// --- MOTOR DE ÁUDIO SINTETIZADO INFANTIL (Web Audio API) ---
 class CartoonAudioEngine {
   constructor() {
     this.ctx = null;
@@ -257,7 +263,6 @@ class CartoonAudioEngine {
 
 const audio = new CartoonAudioEngine();
 
-// Geração de Hash SHA-256 Provably Fair simulado
 const generateRoundHash = () => {
   const chars = 'abcdef0123456789';
   let hash = 'piupiu_';
@@ -268,14 +273,25 @@ const generateRoundHash = () => {
 };
 
 export default function App() {
-  // --- CARTEIRA E SALDO ---
-  const [balance, setBalance] = useState(() => {
-    const saved = localStorage.getItem('piupiu_balance_v3');
-    return saved ? parseFloat(saved) : 1000.00;
+  // --- SISTEMA DE CADASTRO DO JOGADOR ---
+  const [userProfile, setUserProfile] = useState(() => {
+    const saved = localStorage.getItem('piupiu_user_profile');
+    return saved ? JSON.parse(saved) : null;
   });
 
-  // --- CONTROLE DE RODADA GLOBAL / MULTIPLAYER SÍNCRONO ---
-  // Estados: 'WAITING' (Contagem Regressiva para apostar), 'FLYING' (Voo do Piu-Piu), 'CRASHED' (Queda e apuração)
+  const [registerName, setRegisterName] = useState('');
+  const [registerPhone, setRegisterPhone] = useState('');
+  const [registerPixKey, setRegisterPixKey] = useState('');
+  const [registerPixType, setRegisterPixType] = useState('CPF'); // CPF, Telefone, E-mail, Aleatória
+  const [registerError, setRegisterError] = useState('');
+
+  // --- CARTEIRA E SALDO ---
+  const [balance, setBalance] = useState(() => {
+    const saved = localStorage.getItem('piupiu_balance_v4');
+    return saved ? parseFloat(saved) : 50.00; // Começa com R$ 50 de bônus de boas-vindas
+  });
+
+  // --- CONTROLE DE RODADA GLOBAL ---
   const [roundPhase, setRoundPhase] = useState('WAITING');
   const [countdown, setCountdown] = useState(5.0);
   const [roundMultiplier, setRoundMultiplier] = useState(1.00);
@@ -283,7 +299,7 @@ export default function App() {
   const [roundCrashTarget, setRoundCrashTarget] = useState(1.85);
 
   // --- PAINEL DE APOSTA 1 ---
-  const [bet1, setBet1] = useState(10.00);
+  const [bet1, setBet1] = useState(5.00);
   const [bet1Placed, setBet1Placed] = useState(false);
   const [bet1CashedOut, setBet1CashedOut] = useState(false);
   const [bet1Win, setBet1Win] = useState(0);
@@ -291,8 +307,8 @@ export default function App() {
   const [enableAutoCashout1, setEnableAutoCashout1] = useState(false);
   const [autoBet1, setAutoBet1] = useState(false);
 
-  // --- PAINEL DE APOSTA 2 (DUPLA APOSTA ESTILO AVIATOR) ---
-  const [bet2, setBet2] = useState(5.00);
+  // --- PAINEL DE APOSTA 2 ---
+  const [bet2, setBet2] = useState(2.00);
   const [bet2Placed, setBet2Placed] = useState(false);
   const [bet2CashedOut, setBet2CashedOut] = useState(false);
   const [bet2Win, setBet2Win] = useState(0);
@@ -305,9 +321,10 @@ export default function App() {
   const [sfxActive, setSfxActive] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showGatewayInfoModal, setShowGatewayInfoModal] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
-  const [showFairModal, setShowFairModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('live'); // 'live', 'chat', 'history', 'top'
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('live');
 
   // --- HISTÓRICO DE MULTIPLICADORES DA BANCA ---
   const [history, setHistory] = useState([
@@ -317,10 +334,8 @@ export default function App() {
     { mult: 4.80, crashed: false },
     { mult: 1.15, crashed: true },
     { mult: 11.2, crashed: false },
-    { mult: 1.62, crashed: false },
   ]);
 
-  // --- HISTÓRICO PESSOAL DO USUÁRIO ---
   const [myBetsHistory, setMyBetsHistory] = useState([]);
 
   // --- JOGADORES AO VIVO NA MESA ---
@@ -332,26 +347,26 @@ export default function App() {
     { name: 'Coelhinho_Saltador 🐰', bet: 30, cashedOut: false, win: 0, mult: 0, target: 3.50 },
   ]);
 
-  // --- CHAT AO VIVO DA COMUNIDADE ---
+  // --- CHAT DA COMUNIDADE ---
   const [chatMessages, setChatMessages] = useState([
-    { user: 'Ursinho_Pimpão', msg: 'Bora que hoje o Piu-Piu tá pagando muito! 🚀', time: '21:50' },
-    { user: 'Dino_Baby', msg: 'Resgatei em 4x na rodada passada! 🎉', time: '21:52' },
-    { user: 'Pipoca_Doce', msg: 'Quase bati nos tubos haha! 🍿', time: '21:53' },
+    { user: 'Ursinho_Pimpão', msg: 'Bora que o Piu-Piu tá pagando muito! 🚀', time: '22:10' },
+    { user: 'Dino_Baby', msg: 'Acabei de fazer um Pix de R$ 50 pra banca! 💸', time: '22:15' },
+    { user: 'Pipoca_Doce', msg: 'Resgatei em 3.2x! Sensacional 🍿', time: '22:18' },
   ]);
   const [newChatInput, setNewChatInput] = useState('');
 
-  // --- REGRAS DO DONO DA BANCA (ADMIN GGR) ---
-  const [houseRigor, setHouseRigor] = useState('NORMAL'); // 'EASY' (65%), 'NORMAL' (86%), 'HARD' (94%)
+  // --- ADMIN E GGR ---
+  const [houseRigor, setHouseRigor] = useState('NORMAL');
   const [houseStats, setHouseStats] = useState(() => {
-    const saved = localStorage.getItem('piupiu_housestats_v3');
+    const saved = localStorage.getItem('piupiu_housestats_v4');
     return saved ? JSON.parse(saved) : { totalBets: 0, totalPaid: 0 };
   });
 
-  // Modal Pix states
-  const [pixAmount, setPixAmount] = useState(100);
-  const [pixSuccessAlert, setPixSuccessAlert] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState(50);
-  const [pixKeyInput, setPixKeyInput] = useState('vitorhugo@pix.com');
+  // Modal Pix States
+  const [pixAmount, setPixAmount] = useState(50);
+  const [pixCopied, setPixCopied] = useState(false);
+  const [pixSimulateSuccess, setPixSimulateSuccess] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState(25);
   const [withdrawSuccessAlert, setWithdrawSuccessAlert] = useState(false);
 
   // Refs de Física e Canvas
@@ -373,16 +388,61 @@ export default function App() {
     { x: 400, h: 60, color: '#86efac' }
   ]);
 
-  // Salvar Carteira
+  // Salvar no Storage
   useEffect(() => {
-    localStorage.setItem('piupiu_balance_v3', balance.toString());
+    localStorage.setItem('piupiu_balance_v4', balance.toString());
   }, [balance]);
 
   useEffect(() => {
-    localStorage.setItem('piupiu_housestats_v3', JSON.stringify(houseStats));
+    localStorage.setItem('piupiu_housestats_v4', JSON.stringify(houseStats));
   }, [houseStats]);
 
-  // Áudio geral
+  useEffect(() => {
+    if (userProfile) {
+      localStorage.setItem('piupiu_user_profile', JSON.stringify(userProfile));
+    } else {
+      localStorage.removeItem('piupiu_user_profile');
+    }
+  }, [userProfile]);
+
+  // Salvar Cadastro do Usuário
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault();
+    if (!registerName.trim() || registerName.trim().length < 3) {
+      setRegisterError('Por favor, informe seu nome completo.');
+      return;
+    }
+    if (!registerPhone.trim() || registerPhone.replace(/\D/g, '').length < 10) {
+      setRegisterError('Por favor, informe um número de celular válido com DDD.');
+      return;
+    }
+    if (!registerPixKey.trim() || registerPixKey.trim().length < 4) {
+      setRegisterError('Por favor, informe sua chave Pix para receber seus saques.');
+      return;
+    }
+
+    const newProfile = {
+      name: registerName.trim(),
+      phone: registerPhone.trim(),
+      pixKey: registerPixKey.trim(),
+      pixType: registerPixType,
+      createdAt: new Date().toLocaleDateString('pt-BR')
+    };
+
+    setUserProfile(newProfile);
+    setRegisterError('');
+    audio.playTaDah();
+  };
+
+  const handleLogout = () => {
+    setUserProfile(null);
+    setRegisterName('');
+    setRegisterPhone('');
+    setRegisterPixKey('');
+    setShowProfileModal(false);
+  };
+
+  // Áudio
   const handleUserGestureAudio = () => {
     if (!musicActive && !audio.bgmMuted) {
       audio.startMusic();
@@ -402,9 +462,8 @@ export default function App() {
     audio.sfxMuted = !next;
   };
 
-  // --- CICLO DA PRÓXIMA RODADA (RODADAS CONTÍNUAS AUTOMÁTICAS) ---
+  // Ciclo da Próxima Rodada
   const prepareNextRound = () => {
-    // Sorteio de crash baseado no rigor
     const rand = Math.random();
     let maxMult = 1.00;
 
@@ -424,7 +483,6 @@ export default function App() {
     setRoundMultiplier(1.00);
     multRef.current = 1.00;
 
-    // Reset física
     birdRef.current = { y: 140, vy: -1.5, wingAngle: 0 };
     pipesRef.current = [
       { x: 340, top: 80, bottom: 110 },
@@ -432,7 +490,6 @@ export default function App() {
     ];
     starsRef.current = [];
 
-    // Gerar bots para a rodada
     setLivePlayers([
       { name: 'Ursinho_Pimpão 🧸', bet: Math.floor(Math.random() * 30 + 10), cashedOut: false, win: 0, mult: 0, target: 1.15 + Math.random() * 0.5 },
       { name: 'Joaninha_Feliz 🐞', bet: Math.floor(Math.random() * 50 + 20), cashedOut: false, win: 0, mult: 0, target: 1.25 + Math.random() * 1.3 },
@@ -441,13 +498,11 @@ export default function App() {
       { name: 'Coelhinho_Saltador 🐰', bet: Math.floor(Math.random() * 40 + 15), cashedOut: false, win: 0, mult: 0, target: 1.30 + Math.random() * 0.8 },
     ]);
 
-    // Reseta estado das apostas do jogador para a contagem
     setBet1CashedOut(false);
     setBet2CashedOut(false);
     setBet1Win(0);
     setBet2Win(0);
 
-    // Se AutoBet ativo, já marca aposta
     if (autoBet1) {
       placeBet1();
     } else {
@@ -485,23 +540,22 @@ export default function App() {
     return () => clearInterval(timer);
   }, [roundPhase]);
 
-  // Temporizador de Intervalo Pós-Crash
+  // Intervalo pós-crash
   useEffect(() => {
     let timeout = null;
     if (roundPhase === 'CRASHED') {
       timeout = setTimeout(() => {
         prepareNextRound();
-      }, 3500); // 3.5 segundos para ver o resultado e recomeçar
+      }, 3500);
     }
     return () => clearTimeout(timeout);
   }, [roundPhase]);
 
-  // Iniciar loop na primeira carga
   useEffect(() => {
     prepareNextRound();
   }, []);
 
-  // --- COLOCAR APOSTA 1 ---
+  // Apostar 1
   const placeBet1 = () => {
     if (balance < bet1 || bet1 <= 0) {
       setShowDepositModal(true);
@@ -513,7 +567,6 @@ export default function App() {
     audio.playCoin();
   };
 
-  // --- SACAR APOSTA 1 (CASH OUT) ---
   const cashOut1 = () => {
     if (!bet1Placed || bet1CashedOut || roundPhase !== 'FLYING') return;
     const currentMult = multRef.current;
@@ -524,14 +577,13 @@ export default function App() {
     setHouseStats(prev => ({ ...prev, totalPaid: prev.totalPaid + win }));
     audio.playTaDah();
 
-    // Adiciona ao histórico do jogador
     setMyBetsHistory(prev => [
       { id: Date.now(), panel: 'Aposta 1', bet: bet1, mult: currentMult, win: win, profit: win - bet1, status: 'WIN' },
       ...prev.slice(0, 15)
     ]);
   };
 
-  // --- COLOCAR APOSTA 2 ---
+  // Apostar 2
   const placeBet2 = () => {
     if (balance < bet2 || bet2 <= 0) {
       setShowDepositModal(true);
@@ -543,7 +595,6 @@ export default function App() {
     audio.playCoin();
   };
 
-  // --- SACAR APOSTA 2 (CASH OUT) ---
   const cashOut2 = () => {
     if (!bet2Placed || bet2CashedOut || roundPhase !== 'FLYING') return;
     const currentMult = multRef.current;
@@ -560,7 +611,7 @@ export default function App() {
     ]);
   };
 
-  // Bater Asas Manualmente (Pulo)
+  // Pulo
   const jump = () => {
     handleUserGestureAudio();
     if (roundPhase === 'FLYING') {
@@ -583,7 +634,7 @@ export default function App() {
     }
   };
 
-  // Atalhos de teclado
+  // Teclado
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === 'Space') {
@@ -605,7 +656,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [roundPhase, bet1Placed, bet1CashedOut, bet2Placed, bet2CashedOut]);
 
-  // --- LOOP DE ANIMAÇÃO DO VOO (CANVAS) ---
+  // Loop de Animação
   useEffect(() => {
     if (roundPhase !== 'FLYING') return;
 
@@ -618,17 +669,14 @@ export default function App() {
       const currentMult = multRef.current;
       setRoundMultiplier(currentMult);
 
-      // Auto Cash Out da Aposta 1
       if (bet1Placed && !bet1CashedOut && enableAutoCashout1 && currentMult >= autoCashout1) {
         cashOut1();
       }
 
-      // Auto Cash Out da Aposta 2
       if (bet2Placed && !bet2CashedOut && enableAutoCashout2 && currentMult >= autoCashout2) {
         cashOut2();
       }
 
-      // Bots sacando ao vivo
       setLivePlayers(prev => prev.map(p => {
         if (!p.cashedOut && currentMult >= p.target) {
           return { ...p, cashedOut: true, win: p.bet * currentMult, mult: currentMult };
@@ -636,13 +684,10 @@ export default function App() {
         return p;
       }));
 
-      // Verificação de crash programado da casa
       if (currentMult >= roundCrashTarget) {
-        // Crash imediato!
         audio.playWompWomp();
         setHistory(prev => [{ mult: parseFloat(currentMult.toFixed(2)), crashed: true }, ...prev.slice(0, 9)]);
 
-        // Registra perdas no histórico
         if (bet1Placed && !bet1CashedOut) {
           setMyBetsHistory(prev => [
             { id: Date.now(), panel: 'Aposta 1', bet: bet1, mult: currentMult, win: 0, profit: -bet1, status: 'LOSS' },
@@ -660,31 +705,26 @@ export default function App() {
         return;
       }
 
-      // Física assistida do Piu-Piu para voo orgânico
       birdRef.current.vy += 0.35;
       birdRef.current.y += birdRef.current.vy;
       birdRef.current.wingAngle += 0.36;
 
-      // Auto-estabilização suave para desviar dos canos se não houver toque
       if (birdRef.current.y > 220) {
         birdRef.current.vy = -3.8;
       } else if (birdRef.current.y < 50) {
         birdRef.current.vy = 2.0;
       }
 
-      // Nuvens
       cloudsRef.current.forEach(c => {
         c.x -= 0.6;
         if (c.x < -80) c.x = 440;
       });
 
-      // Colinas
       hillsRef.current.forEach(h => {
         h.x -= 0.8;
         if (h.x < -200) h.x = 400;
       });
 
-      // Tubos
       pipesRef.current.forEach(p => { p.x -= 2.6; });
       if (pipesRef.current.length && pipesRef.current[0].x < -60) {
         pipesRef.current.shift();
@@ -693,7 +733,6 @@ export default function App() {
         pipesRef.current.push({ x: lastX + 180, top: topH, bottom: 260 - topH - 95 });
       }
 
-      // Partículas
       starsRef.current.forEach(st => {
         st.x += st.vx;
         st.y += st.vy;
@@ -702,10 +741,9 @@ export default function App() {
       });
       starsRef.current = starsRef.current.filter(st => st.alpha > 0);
 
-      // --- RENDERIZAÇÃO DO CENÁRIO INFANTIL ---
+      // Render Canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Céu com gradiente
       const skyGrad = ctx.createLinearGradient(0, 0, 0, 300);
       skyGrad.addColorStop(0, '#67e8f9');
       skyGrad.addColorStop(0.5, '#bae6fd');
@@ -713,7 +751,6 @@ export default function App() {
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Arco-íris
       ctx.save();
       ctx.globalAlpha = 0.32;
       const rainbowColors = ['#f87171', '#fb923c', '#facc15', '#4ade80', '#60a5fa', '#c084fc'];
@@ -726,7 +763,6 @@ export default function App() {
       });
       ctx.restore();
 
-      // Solzinho
       ctx.save();
       ctx.fillStyle = '#fde047';
       ctx.beginPath();
@@ -750,7 +786,6 @@ export default function App() {
       ctx.stroke();
       ctx.restore();
 
-      // Nuvens
       cloudsRef.current.forEach(c => {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
         ctx.beginPath();
@@ -766,7 +801,6 @@ export default function App() {
         ctx.fill();
       });
 
-      // Colinas
       hillsRef.current.forEach(h => {
         ctx.fillStyle = h.color;
         ctx.beginPath();
@@ -774,13 +808,11 @@ export default function App() {
         ctx.fill();
       });
 
-      // Gramado
       ctx.fillStyle = '#22c55e';
       ctx.fillRect(0, 285, canvas.width, 15);
       ctx.fillStyle = '#16a34a';
       ctx.fillRect(0, 296, canvas.width, 4);
 
-      // Tubos de Pirulito
       pipesRef.current.forEach(p => {
         ctx.save();
         ctx.fillStyle = '#4ade80';
@@ -829,7 +861,6 @@ export default function App() {
         ctx.restore();
       });
 
-      // Partículas
       starsRef.current.forEach(st => {
         ctx.save();
         ctx.translate(st.x, st.y);
@@ -855,7 +886,6 @@ export default function App() {
         ctx.restore();
       });
 
-      // Desenho do Piu-Piu
       const birdX = 70;
       const birdY = birdRef.current.y;
       const r = 18;
@@ -937,13 +967,13 @@ export default function App() {
     return () => cancelAnimationFrame(reqIdRef.current);
   }, [roundPhase, roundCrashTarget, bet1Placed, bet1CashedOut, enableAutoCashout1, autoCashout1, bet2Placed, bet2CashedOut, enableAutoCashout2, autoCashout2]);
 
-  // Enviar Mensagem no Chat
   const handleSendChat = (e) => {
     e.preventDefault();
     if (!newChatInput.trim()) return;
     const now = new Date();
     const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    setChatMessages(prev => [...prev, { user: 'Você 🐤', msg: newChatInput.trim(), time: timeStr }]);
+    const author = userProfile ? userProfile.name.split(' ')[0] : 'Você 🐤';
+    setChatMessages(prev => [...prev, { user: author, msg: newChatInput.trim(), time: timeStr }]);
     setNewChatInput('');
   };
 
@@ -955,7 +985,7 @@ export default function App() {
       className="min-h-screen bg-gradient-to-b from-sky-300 via-sky-200 to-emerald-200 text-slate-800 font-fredoka flex flex-col items-center justify-start p-2 sm:p-4 select-none"
     >
       
-      {/* HEADER PRINCIPAL COM LOGO, SALDO E CARTEIRA PIX */}
+      {/* HEADER PRINCIPAL */}
       <header className="w-full max-w-xl flex justify-between items-center mb-2.5 bg-white/95 backdrop-blur-md p-3 rounded-3xl border-4 border-amber-300 shadow-pop-amber">
         <div className="flex items-center gap-2">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center border-2 border-white shadow-md animate-float-wiggle">
@@ -965,57 +995,62 @@ export default function App() {
             <h1 className="text-xl font-cartoon tracking-wider text-rose-500 flex items-center gap-1 leading-none drop-shadow-sm">
               PIU-PIU <span className="text-xs bg-amber-400 text-amber-950 px-2 py-0.5 rounded-full font-fredoka font-black border-2 border-amber-500">BETS</span>
             </h1>
-            <p className="text-[10px] font-bold text-sky-600 tracking-wide flex items-center gap-1">
-              PROVABLY FAIR 100% AUDITADO <Lock className="w-2.5 h-2.5" />
-            </p>
+            {userProfile ? (
+              <button 
+                onClick={() => setShowProfileModal(true)}
+                className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 text-left"
+              >
+                <User className="w-3 h-3 text-emerald-600" />
+                <span className="truncate max-w-[120px] font-black">{userProfile.name}</span>
+                <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded">Perfil</span>
+              </button>
+            ) : (
+              <p className="text-[10px] font-bold text-sky-600">CADASTRE-SE PARA JOGAR 🎈</p>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Saldo Carteira */}
-          <div className="bg-amber-100 px-3 py-1.5 rounded-2xl border-2 border-amber-400 flex items-center gap-1.5">
+          <div className="bg-amber-100 px-2.5 py-1.5 rounded-2xl border-2 border-amber-400 flex items-center gap-1.5 shadow-sm">
             <Coins className="w-4 h-4 text-amber-600 animate-spin" style={{ animationDuration: '6s' }} />
             <span className="font-extrabold text-amber-800 text-sm">
               R$ {balance.toFixed(2)}
             </span>
           </div>
 
-          {/* Botão Depositar Pix */}
+          {/* Depositar Pix */}
           <button 
             onClick={() => setShowDepositModal(true)}
             className="btn-pop bg-emerald-500 hover:bg-emerald-400 text-white px-2.5 py-1.5 rounded-2xl border-2 border-emerald-600 font-black text-xs flex items-center gap-1 shadow-sm"
-            title="Depositar via Pix"
           >
             <ArrowDownToLine className="w-3.5 h-3.5" /> Pix
           </button>
 
-          {/* Botão Sacar Pix */}
+          {/* Sacar Pix */}
           <button 
             onClick={() => setShowWithdrawModal(true)}
             className="btn-pop bg-sky-500 hover:bg-sky-400 text-white px-2.5 py-1.5 rounded-2xl border-2 border-sky-600 font-black text-xs flex items-center gap-1 shadow-sm"
-            title="Sacar seus Lucros via Pix"
           >
             <ArrowUpFromLine className="w-3.5 h-3.5" /> Sacar
           </button>
 
-          {/* Música On/Off */}
+          {/* Música */}
           <button 
             onClick={toggleMusicButton}
             className={`btn-pop p-1.5 rounded-2xl border-2 transition ${
               musicActive ? 'bg-rose-400 text-white border-rose-500' : 'bg-slate-100 border-slate-300 text-slate-400'
             }`}
-            title="Música de Fundo"
           >
             <Music className="w-4 h-4" />
           </button>
 
-          {/* Efeitos On/Off */}
+          {/* Efeitos */}
           <button 
             onClick={toggleSfxButton}
             className={`btn-pop p-1.5 rounded-2xl border-2 transition ${
               sfxActive ? 'bg-amber-400 text-amber-950 border-amber-500' : 'bg-slate-100 border-slate-300 text-slate-400'
             }`}
-            title="Efeitos Sonoros"
           >
             {sfxActive ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
@@ -1024,14 +1059,27 @@ export default function App() {
           <button 
             onClick={() => setShowAdmin(!showAdmin)}
             className="btn-pop p-1.5 rounded-2xl border-2 bg-purple-100 border-purple-300 text-purple-700"
-            title="Painel do Dono da Banca (GGR)"
           >
             <Settings className="w-4 h-4" />
           </button>
         </div>
       </header>
 
-      {/* BARRA DE HISTÓRICO DE MULTIPLICADORES + SEED PROVABLY FAIR */}
+      {/* BANNER DE DINHEIRO REAL & GATEWAY PIX */}
+      <div className="w-full max-w-xl mb-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white p-2.5 rounded-2xl border-2 border-emerald-600 shadow-sm flex items-center justify-between text-xs font-bold">
+        <div className="flex items-center gap-2">
+          <CreditCard className="w-4 h-4 text-yellow-300 shrink-0" />
+          <span>Depósitos & Saques Instantâneos via Chave Pix</span>
+        </div>
+        <button 
+          onClick={() => setShowGatewayInfoModal(true)}
+          className="btn-pop bg-white text-emerald-800 px-2.5 py-1 rounded-xl text-[11px] font-black border border-emerald-300 flex items-center gap-1 shadow-sm"
+        >
+          <ExternalLink className="w-3 h-3" /> Como Funciona
+        </button>
+      </div>
+
+      {/* HISTÓRICO DE MULTIPLICADORES */}
       <div className="w-full max-w-xl mb-2 flex items-center justify-between gap-1 overflow-x-auto pb-1 scrollbar-none">
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-xs font-black text-sky-800 uppercase flex items-center gap-1 px-1">
@@ -1053,22 +1101,19 @@ export default function App() {
           ))}
         </div>
 
-        <button 
-          onClick={() => setShowFairModal(true)}
-          className="text-[10px] bg-white/80 hover:bg-white text-slate-600 font-bold px-2 py-0.5 rounded-lg border border-slate-300 shrink-0 flex items-center gap-1"
-        >
-          <Lock className="w-2.5 h-2.5 text-emerald-600" /> Hash Justo
-        </button>
+        <div className="text-[10px] bg-white/80 text-slate-600 font-bold px-2 py-0.5 rounded-lg border border-slate-300 shrink-0 flex items-center gap-1">
+          <Lock className="w-2.5 h-2.5 text-emerald-600" /> SHA-256
+        </div>
       </div>
 
-      {/* PAINEL ADMIN GGR SE HABILITADO */}
+      {/* PAINEL ADMIN GGR */}
       {showAdmin && (
         <div className="w-full max-w-xl bg-white/95 backdrop-blur-md p-3.5 rounded-3xl border-4 border-purple-300 mb-2.5 text-xs space-y-2.5 shadow-pop-indigo">
           <div className="flex justify-between items-center pb-1 border-b border-purple-100">
             <span className="font-black text-purple-700 uppercase tracking-wider flex items-center gap-1 text-sm">
-              <ShieldAlert className="w-4 h-4 text-purple-600" /> Painel de Retenção da Casa (GGR) 🏰
+              <ShieldAlert className="w-4 h-4 text-purple-600" /> Painel da Banca (GGR) 🏰
             </span>
-            <span className="text-[10px] text-purple-500 font-bold">Totalmente Funcional</span>
+            <span className="text-[10px] text-purple-500 font-bold">Admin</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -1077,11 +1122,11 @@ export default function App() {
               <span className="font-extrabold text-purple-900">R$ {houseStats.totalBets.toFixed(2)}</span>
             </div>
             <div className="bg-purple-50 p-2 rounded-2xl border border-purple-200">
-              <span className="text-[10px] text-purple-600 font-bold block">Total Pago aos Jogadores</span>
+              <span className="text-[10px] text-purple-600 font-bold block">Total Pago</span>
               <span className="font-extrabold text-purple-900">R$ {houseStats.totalPaid.toFixed(2)}</span>
             </div>
             <div className="bg-purple-50 p-2 rounded-2xl border border-purple-200">
-              <span className="text-[10px] text-purple-600 font-bold block">Lucro Líquido (GGR)</span>
+              <span className="text-[10px] text-purple-600 font-bold block">Lucro da Casa (GGR)</span>
               <span className={`font-black ${ggr >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 R$ {ggr.toFixed(2)}
               </span>
@@ -1113,7 +1158,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ARENA DO JOGO / CANVAS INFANTIL */}
+      {/* ARENA DO JOGO / CANVAS */}
       <div 
         onClick={jump}
         onTouchStart={(e) => {
@@ -1124,12 +1169,12 @@ export default function App() {
       >
         <canvas ref={canvasRef} width={400} height={300} className="w-full h-full block" />
 
-        {/* FASE 1: CONTAGEM REGRESSIVA PARA NOVA RODADA */}
+        {/* FASE 1: CONTAGEM REGRESSIVA */}
         {roundPhase === 'WAITING' && (
           <div className="absolute inset-0 bg-sky-950/40 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
             <div className="bg-white/95 border-4 border-amber-400 px-6 py-4 rounded-3xl shadow-pop-amber flex flex-col items-center gap-1.5 animate-in zoom-in-95">
               <span className="text-xs font-black text-amber-700 uppercase tracking-widest flex items-center gap-1">
-                <Clock className="w-4 h-4 animate-spin text-amber-600" /> Próxima Decolagem em:
+                <Clock className="w-4 h-4 animate-spin text-amber-600" /> Próxima Decolagem:
               </span>
               <span className="font-cartoon text-5xl text-rose-500 drop-shadow-sm">
                 {countdown.toFixed(1)}s
@@ -1141,13 +1186,13 @@ export default function App() {
                 />
               </div>
               <p className="text-[11px] text-slate-500 font-bold mt-1">
-                Faça suas apostas nos painéis abaixo! 🎈
+                Aposte para decolar com o Piu-Piu! 🎈
               </p>
             </div>
           </div>
         )}
 
-        {/* FASE 2: VOO DO PIU-PIU - MULTIPLICADOR GIGANTE */}
+        {/* FASE 2: VOO DO PIU-PIU */}
         {roundPhase === 'FLYING' && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-amber-300 border-4 border-amber-500 px-6 py-1.5 rounded-3xl shadow-pop-amber flex items-center gap-2 animate-bounce">
             <Sparkles className="w-5 h-5 text-amber-700 animate-spin" />
@@ -1157,7 +1202,7 @@ export default function App() {
           </div>
         )}
 
-        {/* DICA DE PULO DURANTE O VOO */}
+        {/* DICA DE PULO */}
         {roundPhase === 'FLYING' && (
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-1 rounded-full border-2 border-amber-300 shadow-md pointer-events-none flex items-center gap-1.5">
             <span className="text-[11px] text-amber-900 font-black">
@@ -1172,7 +1217,7 @@ export default function App() {
             <div className="text-5xl mb-1 animate-bounce">💥🙈💫</div>
             <h2 className="text-3xl font-cartoon text-white mb-1 drop-shadow-md">PIU-PIU CRACHOU!</h2>
             <p className="text-yellow-200 text-sm font-black mb-3">
-              Multiplicador Final: <span className="text-white text-lg bg-black/20 px-2 py-0.5 rounded-xl">{roundMultiplier.toFixed(2)}x</span>
+              Multiplicador: <span className="text-white text-lg bg-black/20 px-2 py-0.5 rounded-xl">{roundMultiplier.toFixed(2)}x</span>
             </p>
             <span className="bg-yellow-300 text-amber-950 text-xs font-black px-4 py-1.5 rounded-full border-2 border-yellow-400 shadow-md animate-pulse">
               Preparando a próxima rodada...
@@ -1181,10 +1226,10 @@ export default function App() {
         )}
       </div>
 
-      {/* --- DUPLO PAINEL DE APOSTAS (ESTILO AVIATOR / BLAZE / SPACEMAN) --- */}
+      {/* DUPLO PAINEL DE APOSTAS */}
       <div className="w-full max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2.5">
         
-        {/* === PAINEL DE APOSTA 1 === */}
+        {/* PAINEL 1 */}
         <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-3xl border-4 border-sky-300 shadow-cartoon flex flex-col justify-between space-y-2.5">
           <div className="flex justify-between items-center">
             <span className="text-xs font-black text-sky-800 uppercase flex items-center gap-1">
@@ -1227,7 +1272,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Auto Cashout 1 */}
           <div className="bg-sky-50 p-1.5 rounded-2xl border border-sky-200 flex items-center justify-between text-xs">
             <label className="text-[11px] font-bold text-sky-800 flex items-center gap-1 cursor-pointer">
               <input 
@@ -1251,7 +1295,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Botão de Ação Aposta 1 */}
           {roundPhase === 'FLYING' && bet1Placed && !bet1CashedOut ? (
             <button
               onClick={cashOut1}
@@ -1271,7 +1314,7 @@ export default function App() {
               }}
               className="w-full btn-pop bg-rose-400 hover:bg-rose-300 text-white font-black py-2.5 rounded-2xl border-2 border-rose-500 text-xs"
             >
-              Cancelar Aposta (R$ {bet1.toFixed(2)})
+              Cancelar (R$ {bet1.toFixed(2)})
             </button>
           ) : (
             <button
@@ -1283,7 +1326,7 @@ export default function App() {
           )}
         </div>
 
-        {/* === PAINEL DE APOSTA 2 === */}
+        {/* PAINEL 2 */}
         <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-3xl border-4 border-amber-300 shadow-cartoon flex flex-col justify-between space-y-2.5">
           <div className="flex justify-between items-center">
             <span className="text-xs font-black text-amber-800 uppercase flex items-center gap-1">
@@ -1326,7 +1369,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Auto Cashout 2 */}
           <div className="bg-amber-50 p-1.5 rounded-2xl border border-amber-200 flex items-center justify-between text-xs">
             <label className="text-[11px] font-bold text-amber-800 flex items-center gap-1 cursor-pointer">
               <input 
@@ -1350,7 +1392,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Botão de Ação Aposta 2 */}
           {roundPhase === 'FLYING' && bet2Placed && !bet2CashedOut ? (
             <button
               onClick={cashOut2}
@@ -1370,7 +1411,7 @@ export default function App() {
               }}
               className="w-full btn-pop bg-rose-400 hover:bg-rose-300 text-white font-black py-2.5 rounded-2xl border-2 border-rose-500 text-xs"
             >
-              Cancelar Aposta (R$ {bet2.toFixed(2)})
+              Cancelar (R$ {bet2.toFixed(2)})
             </button>
           ) : (
             <button
@@ -1383,16 +1424,14 @@ export default function App() {
         </div>
       </div>
 
-      {/* --- SEÇÃO SOCIAL: ABAS (AO VIVO, CHAT, MINHAS APOSTAS, TOP GANHOS) --- */}
+      {/* ABAS SOCIAIS */}
       <div className="w-full max-w-xl bg-white/95 backdrop-blur-sm p-3.5 rounded-3xl border-4 border-emerald-300 shadow-cartoon mt-2.5">
-        
-        {/* Navegação entre Abas */}
         <div className="flex items-center gap-1.5 border-b border-emerald-100 pb-2 mb-2.5 overflow-x-auto scrollbar-none">
           {[
-            { id: 'live', label: 'Apostas ao Vivo 👥', icon: Users },
-            { id: 'chat', label: 'Chat da Galera 💬', icon: MessageSquare },
-            { id: 'history', label: 'Minhas Apostas 📜', icon: Clock },
-            { id: 'top', label: 'Maiores Ganhos 🏆', icon: Trophy },
+            { id: 'live', label: 'Apostas ao Vivo 👥' },
+            { id: 'chat', label: 'Chat da Galera 💬' },
+            { id: 'history', label: 'Minhas Apostas 📜' },
+            { id: 'top', label: 'Maiores Ganhos 🏆' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -1408,7 +1447,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* CONTEÚDO DA ABA 1: APOSTAS AO VIVO */}
         {activeTab === 'live' && (
           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
             {livePlayers.map((p, idx) => (
@@ -1431,7 +1469,6 @@ export default function App() {
           </div>
         )}
 
-        {/* CONTEÚDO DA ABA 2: CHAT AO VIVO */}
         {activeTab === 'chat' && (
           <div className="space-y-2">
             <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
@@ -1464,12 +1501,11 @@ export default function App() {
           </div>
         )}
 
-        {/* CONTEÚDO DA ABA 3: MINHAS APOSTAS */}
         {activeTab === 'history' && (
           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
             {myBetsHistory.length === 0 ? (
               <p className="text-center text-xs text-slate-400 py-4 font-bold">
-                Você ainda não fez apostas nas rodadas recentes.
+                Você ainda não fez apostas recentes.
               </p>
             ) : (
               myBetsHistory.map(b => (
@@ -1491,14 +1527,12 @@ export default function App() {
           </div>
         )}
 
-        {/* CONTEÚDO DA ABA 4: TOP GANHOS DO DIA */}
         {activeTab === 'top' && (
           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
             {[
               { rank: '🥇 1º', name: 'SuperDino_99', mult: 28.5, win: 2850.00 },
               { rank: '🥈 2º', name: 'Joaninha_Rainha', mult: 16.4, win: 1640.00 },
               { rank: '🥉 3º', name: 'PiuPiu_Master', mult: 12.0, win: 1200.00 },
-              { rank: '4º', name: 'CoelhoDoce', mult: 9.8, win: 490.00 },
             ].map((t, idx) => (
               <div key={idx} className="flex justify-between items-center bg-amber-50/60 px-3 py-1.5 rounded-2xl text-xs border border-amber-200">
                 <div className="flex items-center gap-2">
@@ -1515,29 +1549,162 @@ export default function App() {
         )}
       </div>
 
+      {/* --- MODAL DE CADASTRO OBRIGATÓRIO (SE NÃO TIVER CADASTRO) --- */}
+      {!userProfile && (
+        <div className="fixed inset-0 bg-sky-950/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-amber-400 w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-cartoon-lg space-y-4 animate-in zoom-in-95">
+            <div className="text-center space-y-1">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center border-2 border-white shadow-md animate-bounce">
+                <span className="text-3xl">🐤</span>
+              </div>
+              <h2 className="text-2xl font-cartoon text-rose-500">BEM-VINDO AO PIU-PIU BETS!</h2>
+              <p className="text-xs text-slate-600 font-bold">
+                Cadastre seus dados para receber seus depósitos e sacar seus lucros via Pix!
+              </p>
+            </div>
+
+            <form onSubmit={handleRegisterSubmit} className="space-y-3">
+              {registerError && (
+                <div className="bg-rose-100 text-rose-800 border-2 border-rose-300 p-2.5 rounded-2xl text-xs font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{registerError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="text-[11px] font-black text-slate-700 flex items-center gap-1 mb-1">
+                  <User className="w-3.5 h-3.5 text-sky-600" /> Nome Completo:
+                </label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="Ex: João Vitor da Silva"
+                  value={registerName}
+                  onChange={(e) => setRegisterName(e.target.value)}
+                  className="w-full bg-slate-50 border-2 border-sky-300 rounded-2xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-black text-slate-700 flex items-center gap-1 mb-1">
+                  <Phone className="w-3.5 h-3.5 text-emerald-600" /> Celular / WhatsApp:
+                </label>
+                <input 
+                  type="tel"
+                  required
+                  placeholder="Ex: (11) 98765-4321"
+                  value={registerPhone}
+                  onChange={(e) => setRegisterPhone(e.target.value)}
+                  className="w-full bg-slate-50 border-2 border-sky-300 rounded-2xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[11px] font-black text-slate-700 flex items-center gap-1">
+                    <Key className="w-3.5 h-3.5 text-amber-600" /> Chave Pix Principal:
+                  </label>
+                  <select 
+                    value={registerPixType}
+                    onChange={(e) => setRegisterPixType(e.target.value)}
+                    className="text-[10px] bg-slate-100 border border-slate-300 rounded-lg px-1.5 py-0.5 font-bold text-slate-700"
+                  >
+                    <option value="CPF">CPF</option>
+                    <option value="Telefone">Celular</option>
+                    <option value="E-mail">E-mail</option>
+                    <option value="Aleatória">Aleatória</option>
+                  </select>
+                </div>
+                <input 
+                  type="text"
+                  required
+                  placeholder="Digite sua chave Pix para receber os saques"
+                  value={registerPixKey}
+                  onChange={(e) => setRegisterPixKey(e.target.value)}
+                  className="w-full bg-slate-50 border-2 border-sky-300 rounded-2xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="bg-amber-50 p-2.5 rounded-2xl border border-amber-200 text-[11px] text-amber-900 font-bold flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Bônus especial de boas-vindas: <strong>R$ 50,00</strong> creditados na hora para testar!</span>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full btn-pop bg-emerald-500 hover:bg-emerald-400 text-white font-cartoon text-lg py-3.5 rounded-2xl border-4 border-emerald-700 shadow-pop-emerald uppercase tracking-wider"
+              >
+                Cadastrar e Começar a Jogar 🚀
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL DO PERFIL DO USUÁRIO --- */}
+      {showProfileModal && userProfile && (
+        <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-emerald-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95">
+            <div className="flex justify-between items-center">
+              <h3 className="font-cartoon text-xl text-emerald-600 flex items-center gap-2">
+                <User className="w-5 h-5" /> Meu Perfil
+              </h3>
+              <button 
+                onClick={() => setShowProfileModal(false)}
+                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
+              >✕</button>
+            </div>
+
+            <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 space-y-2 text-xs">
+              <div>
+                <span className="text-[10px] text-emerald-800 font-bold block">Nome Completo:</span>
+                <span className="font-black text-slate-800 text-sm">{userProfile.name}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-emerald-800 font-bold block">Celular Cadastrado:</span>
+                <span className="font-black text-slate-800">{userProfile.phone}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-emerald-800 font-bold block">Chave Pix de Saque ({userProfile.pixType}):</span>
+                <span className="font-mono font-black text-emerald-900 bg-white px-2 py-0.5 rounded border border-emerald-200 block truncate">
+                  {userProfile.pixKey}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="w-full btn-pop bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-black py-2.5 rounded-2xl border border-rose-300 flex items-center justify-center gap-1"
+            >
+              <LogOut className="w-4 h-4" /> Alterar Dados / Trocar Conta
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* --- MODAL 1: DEPÓSITO PIX INSTANTÂNEO --- */}
       {showDepositModal && (
         <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border-4 border-emerald-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95">
             <div className="flex justify-between items-center">
               <h3 className="font-cartoon text-xl text-emerald-600 flex items-center gap-2">
-                <ArrowDownToLine className="w-6 h-6 text-emerald-500" /> Depósito via Pix
+                <ArrowDownToLine className="w-6 h-6 text-emerald-500" /> Depositar via Pix
               </h3>
               <button 
                 onClick={() => {
                   setShowDepositModal(false);
-                  setPixSuccessAlert(false);
+                  setPixSimulateSuccess(false);
                 }}
                 className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
               >✕</button>
             </div>
 
             <p className="text-xs text-slate-600 font-bold">
-              Selecione o valor para creditar moedinhas instantaneamente via Pix:
+              Selecione o valor para recarregar sua conta via Pix:
             </p>
 
             <div className="grid grid-cols-3 gap-1.5">
-              {[20, 50, 100, 200, 500, 1000].map(val => (
+              {[10, 20, 50, 100, 200, 500].map(val => (
                 <button
                   key={val}
                   onClick={() => setPixAmount(val)}
@@ -1552,25 +1719,41 @@ export default function App() {
               ))}
             </div>
 
-            {/* Chave Pix e QR Code Simulado */}
+            {/* QR CODE PIX REALÍSTICO */}
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center space-y-2">
-              <div className="w-24 h-24 mx-auto bg-white p-1 rounded-xl border border-slate-300 flex items-center justify-center shadow-inner">
-                {/* QR Code SVG Visual */}
-                <div className="w-full h-full bg-slate-900 rounded grid grid-cols-6 gap-0.5 p-1">
-                  {Array.from({ length: 36 }).map((_, i) => (
-                    <div key={i} className={`rounded-sm ${(i * 7) % 3 === 0 ? 'bg-white' : 'bg-transparent'}`} />
+              <div className="w-28 h-28 mx-auto bg-white p-2 rounded-2xl border border-slate-300 flex items-center justify-center shadow-inner">
+                <div className="w-full h-full bg-slate-900 rounded grid grid-cols-7 gap-0.5 p-1">
+                  {Array.from({ length: 49 }).map((_, i) => (
+                    <div key={i} className={`rounded-sm ${(i * 11) % 3 === 0 ? 'bg-white' : 'bg-transparent'}`} />
                   ))}
                 </div>
               </div>
-              <p className="text-[10px] text-slate-500 font-bold">Chave Aleatória Pix Gerada:</p>
-              <div className="bg-white px-2 py-1 rounded-lg border text-[10px] font-mono font-bold text-slate-700 truncate">
-                piupiu-pix-7f93a1024b88c
+              
+              <div className="flex items-center gap-1">
+                <input 
+                  readOnly 
+                  value={`00020126580014br.gov.bcb.pix0136piupiu-${pixAmount}-bets520400005303986540${pixAmount}.005802BR5912PIU PIU BETS6009SAO PAULO62070503***6304`}
+                  className="w-full bg-white px-2 py-1.5 rounded-xl border text-[9px] font-mono font-bold text-slate-600 truncate"
+                />
+                <button 
+                  onClick={() => {
+                    setPixCopied(true);
+                    setTimeout(() => setPixCopied(false), 2000);
+                  }}
+                  className="btn-pop bg-emerald-100 hover:bg-emerald-200 text-emerald-800 p-2 rounded-xl border border-emerald-300 shrink-0"
+                  title="Copiar Código Pix Copia e Cola"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
               </div>
+              {pixCopied && (
+                <span className="text-[10px] text-emerald-600 font-bold block">Código Pix copiado!</span>
+              )}
             </div>
 
-            {pixSuccessAlert && (
+            {pixSimulateSuccess && (
               <div className="bg-emerald-100 text-emerald-900 border border-emerald-300 p-2 rounded-2xl text-xs font-black text-center animate-bounce">
-                ✅ Depósito de R$ {pixAmount.toFixed(2)} aprovado no Pix com sucesso!
+                ✅ Pagamento Pix de R$ {pixAmount.toFixed(2)} aprovado e saldo creditado!
               </div>
             )}
 
@@ -1578,21 +1761,21 @@ export default function App() {
               onClick={() => {
                 setBalance(prev => prev + pixAmount);
                 audio.playCoin();
-                setPixSuccessAlert(true);
+                setPixSimulateSuccess(true);
                 setTimeout(() => {
                   setShowDepositModal(false);
-                  setPixSuccessAlert(false);
-                }, 1200);
+                  setPixSimulateSuccess(false);
+                }, 1300);
               }}
               className="w-full btn-pop bg-emerald-500 hover:bg-emerald-400 text-white font-cartoon text-base py-3 rounded-2xl border-4 border-emerald-700 shadow-pop-emerald uppercase tracking-wider"
             >
-              Confirmar Pagamento Pix R$ {pixAmount.toFixed(2)} 🚀
+              Aprovar Pagamento Pix R$ {pixAmount.toFixed(2)} 🚀
             </button>
           </div>
         </div>
       )}
 
-      {/* --- MODAL 2: SAQUE PIX INSTANTÂNEO --- */}
+      {/* --- MODAL 2: SAQUE PIX COM OS DADOS DO CADASTRO --- */}
       {showWithdrawModal && (
         <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border-4 border-sky-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95">
@@ -1609,28 +1792,25 @@ export default function App() {
               >✕</button>
             </div>
 
-            <p className="text-xs text-slate-600 font-bold">
-              Disponível para saque: <span className="text-emerald-600 font-black">R$ {balance.toFixed(2)}</span>
-            </p>
-
-            <div>
-              <label className="text-[11px] font-black text-slate-700 block mb-1">Sua Chave Pix (CPF, E-mail ou Celular):</label>
-              <input 
-                type="text"
-                value={pixKeyInput}
-                onChange={(e) => setPixKeyInput(e.target.value)}
-                className="w-full bg-slate-50 border-2 border-sky-300 rounded-2xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-sky-500"
-              />
+            <div className="bg-sky-50 p-3 rounded-2xl border border-sky-200 text-xs space-y-1">
+              <span className="text-[10px] text-sky-800 font-bold block">Destinatário Cadastrado:</span>
+              <p className="font-black text-slate-800">{userProfile?.name || 'Jogador Cadastrado'}</p>
+              <p className="font-mono text-[11px] text-sky-900 font-bold bg-white p-1.5 rounded-lg border border-sky-200 truncate">
+                Chave Pix: {userProfile?.pixKey || 'pix@exemplo.com'}
+              </p>
             </div>
 
             <div>
-              <label className="text-[11px] font-black text-slate-700 block mb-1">Valor do Saque (R$):</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-[11px] font-black text-slate-700">Valor do Saque (R$):</label>
+                <span className="text-[10px] text-emerald-600 font-bold">Disponível: R$ {balance.toFixed(2)}</span>
+              </div>
               <input 
                 type="number"
-                min="10"
+                min="5"
                 max={balance}
                 value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(Math.min(balance, Math.max(10, parseFloat(e.target.value) || 0)))}
+                onChange={(e) => setWithdrawAmount(Math.min(balance, Math.max(5, parseFloat(e.target.value) || 0)))}
                 className="w-full bg-slate-50 border-2 border-sky-300 rounded-2xl px-3 py-2 text-sm font-black text-emerald-600 focus:outline-none focus:border-sky-500"
               />
             </div>
@@ -1661,37 +1841,54 @@ export default function App() {
         </div>
       )}
 
-      {/* --- MODAL 3: PROVABLY FAIR (AUDITORIA E HASH DA RODADA) --- */}
-      {showFairModal && (
-        <div className="fixed inset-0 bg-sky-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border-4 border-purple-400 w-full max-w-sm rounded-3xl p-5 shadow-cartoon-lg space-y-3 animate-in zoom-in-95 text-xs">
+      {/* --- MODAL 3: COMO COLOCAR DINHEIRO REAL & INTEGRAR GATEWAY PIX --- */}
+      {showGatewayInfoModal && (
+        <div className="fixed inset-0 bg-sky-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-emerald-400 w-full max-w-md rounded-3xl p-5 shadow-cartoon-lg space-y-3.5 animate-in zoom-in-95 text-xs">
             <div className="flex justify-between items-center">
-              <h3 className="font-cartoon text-lg text-purple-700 flex items-center gap-1.5">
-                <Lock className="w-5 h-5 text-purple-600" /> Sistema Provably Fair
+              <h3 className="font-cartoon text-xl text-emerald-600 flex items-center gap-2">
+                <CreditCard className="w-5 h-5" /> Integração de Dinheiro Real
               </h3>
               <button 
-                onClick={() => setShowFairModal(false)}
-                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-7 h-7 rounded-full border border-slate-300 font-black flex items-center justify-center"
+                onClick={() => setShowGatewayInfoModal(false)}
+                className="btn-pop bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 rounded-full border border-slate-300 font-black flex items-center justify-center"
               >✕</button>
             </div>
 
-            <p className="text-slate-600 font-bold leading-relaxed">
-              O resultado de cada rodada do Piu-Piu Bets é criptograficamente gerado antes da decolagem. Isto garante que nem o jogador nem o servidor alteram o multiplicador durante o voo.
+            <p className="text-slate-700 font-bold leading-relaxed">
+              Para você receber dinheiro real dos jogadores na sua conta bancária e processar pagamentos Pix automáticos, conectamos uma <strong>API de Pagamento Pix (Gateway)</strong>.
             </p>
 
-            <div className="bg-purple-50 p-2.5 rounded-2xl border border-purple-200 space-y-1">
-              <span className="text-[10px] font-black text-purple-700 uppercase block">Seed / Hash SHA-256 da Rodada Atual:</span>
-              <p className="font-mono text-[10px] text-purple-950 font-bold break-all bg-white p-2 rounded-xl border border-purple-200">
-                {roundHash}
-              </p>
+            <div className="space-y-2">
+              <div className="bg-emerald-50 p-2.5 rounded-2xl border border-emerald-200">
+                <h4 className="font-black text-emerald-800 text-[11px] mb-0.5">1. As Melhores Opções no Brasil:</h4>
+                <ul className="list-disc list-inside text-[11px] text-slate-700 space-y-0.5">
+                  <li><strong>Mercado Pago / Asaas / Woovi / SuitPay</strong>: Geram QR Code Pix instantâneo e recebem direto na sua conta.</li>
+                  <li><strong>Taxa média:</strong> R$ 0,50 a R$ 0,99 por depósito recebido.</li>
+                </ul>
+              </div>
+
+              <div className="bg-sky-50 p-2.5 rounded-2xl border border-sky-200">
+                <h4 className="font-black text-sky-800 text-[11px] mb-0.5">2. Como funciona o fluxo automático:</h4>
+                <p className="text-[11px] text-slate-700">
+                  O jogador clica em <em>Depositar R$ 20</em> ➔ A API gera o QR Code ➔ O jogador paga no app do banco dele ➔ O banco notifica nosso sistema via <strong>Webhook</strong> ➔ O saldo cai instantaneamente no joguinho!
+                </p>
+              </div>
+
+              <div className="bg-amber-50 p-2.5 rounded-2xl border border-amber-200">
+                <h4 className="font-black text-amber-900 text-[11px] mb-0.5">3. Próximo Passo:</h4>
+                <p className="text-[11px] text-slate-700">
+                  Podemos criar um backend leve em Node.js (Express) com a rota de Pix do Mercado Pago ou Asaas conectando suas chaves de API quando você quiser ativar!
+                </p>
+              </div>
             </div>
 
-            <div className="bg-emerald-50 p-2 rounded-2xl border border-emerald-200 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span className="text-[11px] font-bold text-emerald-900">
-                Auditoria de Integridade Concluída: Resultados 100% Verificados.
-              </span>
-            </div>
+            <button
+              onClick={() => setShowGatewayInfoModal(false)}
+              className="w-full btn-pop bg-emerald-500 hover:bg-emerald-400 text-white font-cartoon text-sm py-2.5 rounded-2xl border-2 border-emerald-700 uppercase"
+            >
+              Entendido! Continuar Jogando 🎮
+            </button>
           </div>
         </div>
       )}
